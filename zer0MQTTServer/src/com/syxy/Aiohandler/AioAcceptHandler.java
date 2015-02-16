@@ -1,7 +1,8 @@
-package com.syxy.server;
+package com.syxy.Aiohandler;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.ArrayList;
 
 /**
  * <li>说明 异步接收链接
@@ -9,17 +10,17 @@ import java.nio.channels.CompletionHandler;
  * <li>创建日期：2015-2-14
  */
 
-public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, Object>{
+public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, ArrayList>{
 
 	@Override
 	public void completed(AsynchronousSocketChannel result,
-			Object attachment) {
+			ArrayList attachment) {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public void failed(Throwable exc, Object attachment) {
+	public void failed(Throwable exc, ArrayList attachment) {
 		// TODO Auto-generated method stub
 		
 	}
