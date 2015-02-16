@@ -7,7 +7,7 @@ import java.util.ArrayList;
 /**
  * <li>说明 异步接收链接
  * <li>作者 zer0
- * <li>创建日期：2015-2-14
+ * <li>创建日期 2015-2-14
  */
 
 public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, ArrayList>{
