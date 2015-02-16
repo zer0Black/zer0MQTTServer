@@ -15,12 +15,12 @@ import org.apache.log4j.PropertyConfigurator;
 
 public class Log{
 	
-	static Logger logger;
+	public static Logger logger;
 	 
 	//静态块加载配置文件
 	static{	
 		try {
-			InputStream in = Log.class.getResourceAsStream("/log4j.properties");     
+			InputStream in = Log.class.getResourceAsStream("/resource/log4j.properties");     
 			Properties properties = new Properties();
 			properties.load(in);
 			PropertyConfigurator.configure(properties);
