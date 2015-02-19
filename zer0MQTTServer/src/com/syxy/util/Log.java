@@ -15,7 +15,7 @@ import org.apache.log4j.PropertyConfigurator;
 
 public class Log{
 	
-	public static Logger logger;
+	private static Logger logger;
 	 
 	//静态块加载配置文件
 	static{	
@@ -24,7 +24,7 @@ public class Log{
 			Properties properties = new Properties();
 			properties.load(in);
 			PropertyConfigurator.configure(properties);
-			logger = Logger.getLogger(Log.class );
+			logger = Logger.getLogger("");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -1,5 +1,9 @@
 package com.syxy.server;
 
+import com.syxy.protocol.mqttImp.MQTTCoder;
+import com.syxy.protocol.mqttImp.MQTTDecoder;
+import com.syxy.protocol.mqttImp.MQTTProcess;
+
 /**
  * <li>说明 启动服务器，主线程所在
  * <li>作者 zer0
@@ -9,7 +13,7 @@ package com.syxy.server;
 public class StartServer {
 	
 	public static void main(String[] args){
-		
+		new TcpServer(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
 	}
 	
 }
