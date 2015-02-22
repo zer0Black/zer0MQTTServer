@@ -4,12 +4,9 @@ import java.net.InetSocketAddress;
 import java.net.StandardSocketOptions;
 import java.nio.channels.AsynchronousChannelGroup;
 import java.nio.channels.AsynchronousServerSocketChannel;
-import java.nio.channels.CompletionHandler;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.syxy.Aiohandler.AioAcceptHandler;
 import com.syxy.Aiohandler.AioReadHandler;
@@ -47,8 +44,12 @@ public class TcpServer {
 	private DecoderHandler decoderHandler;// 解码处理器
 	private ProcessHandler processHandler;// 业务处理器
 	
+	private ConcurrentHashMap<Object, ClientSession> clients = new ConcurrentHashMap<Object, ClientSession>();// 客户端链接映射表
+	
 	private volatile Integer port;//服务器端口
 	private volatile boolean noStopRequested = true;// 循环控制变量
+	
+	private final AtomicInteger keyIndex = new AtomicInteger();// 连接序号,用于标示客户端的编号
 	
 	public TcpServer(CoderHandler coderHandler, DecoderHandler decoderHandler, ProcessHandler processHandler){
 		// 设置端口
@@ -87,15 +88,25 @@ public class TcpServer {
 	 */
 	public void startServer(){
 		try{
-			//把读处理器，写处理器传递给接收处理器，以方便建立连接后，处理读写数据
-			Map<String, Object> serverMap = new HashMap<String, Object>();
-			serverMap.put("readHandler", this.readHandler);
-			serverMap.put("writeHandler", this.writeHandler);
-			this.server.accept(serverMap, this.acceptHandler);// 创建监听处理器			
+			this.server.accept(this, this.acceptHandler);
 			Log.info("服务器准备就绪，等待请求到来");
 		}catch(Exception e){
 			Log.info(e.getMessage());
 			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * <li>方法名 closeServer
+	 * <li>返回类型 void
+	 * <li>说明 删除指定的连接
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-2-21
+	 */
+	public void closeServer(Object index){
+		ClientSession client = this.clients.remove(index);// 从本地连接中清除
+		if(client != null){
+			return;
 		}
 	}
 	
@@ -125,5 +136,42 @@ public class TcpServer {
 			e.printStackTrace();
 		}
 	}
-	
+
+	//get/set变量封装
+	public AsynchronousServerSocketChannel getServer() {
+		return server;
+	}
+
+	public void setServer(AsynchronousServerSocketChannel server) {
+		this.server = server;
+	}
+
+	public AioReadHandler getReadHandler() {
+		return readHandler;
+	}
+
+	public void setReadHandler(AioReadHandler readHandler) {
+		this.readHandler = readHandler;
+	}
+
+	public AioWriteHandler getWriteHandler() {
+		return writeHandler;
+	}
+
+	public void setWriteHandler(AioWriteHandler writeHandler) {
+		this.writeHandler = writeHandler;
+	}
+
+	public ConcurrentHashMap<Object, ClientSession> getClients() {
+		return clients;
+	}
+
+	public void setClients(ConcurrentHashMap<Object, ClientSession> clients) {
+		this.clients = clients;
+	}
+
+	public AtomicInteger getKeyIndex() {
+		return keyIndex;
+	}
+
 }

@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp;
 
+import java.nio.ByteBuffer;
+
 import com.syxy.protocol.DecoderHandler;
 import com.syxy.server.ClientSession;
 
@@ -12,9 +14,9 @@ import com.syxy.server.ClientSession;
 public class MQTTDecoder implements DecoderHandler {
 
 	@Override
-	public void process(ClientSession client) {
+	public ByteBuffer process(ByteBuffer byteBuffer, ClientSession client) {
 		// TODO Auto-generated method stub
-		
+		return null;
 	}
 
 }

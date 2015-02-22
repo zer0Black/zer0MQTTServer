@@ -1,5 +1,7 @@
 package com.syxy.protocol;
 
+import java.nio.ByteBuffer;
+
 import com.syxy.server.ClientSession;
 
 /**
@@ -18,6 +20,6 @@ public interface CoderHandler {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-16
 	 */
-	public void process(ClientSession client);
+	public ByteBuffer process(ByteBuffer byteBuffer, ClientSession client);
 	
 }
