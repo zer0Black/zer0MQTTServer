@@ -106,8 +106,8 @@ public class ClientSession {
 		
 		this.byteBuffer.flip();
 		this.requestMsg = this.decoderHandler.process(this.byteBuffer, this);
-		
 		this.byteBuffer.clear();
+		
 		returnValue = true;
 		this.readEvent();
 		
@@ -202,12 +202,11 @@ public class ClientSession {
 		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
 		while(it.hasNext()){
 			ClientSession client = it.next();
-			Log.info("回写到："+client.getIp());
-			client.getSocketChannel().write(buffer, this, this.writeHandler);
+			buffer.flip();
+			client.socketChannel.write(buffer, this, this.writeHandler);
 		}
 	}
 	
-
 	public Object getIndex() {
 		return index;
 	}
