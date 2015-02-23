@@ -1,8 +1,10 @@
 package com.syxy.util;
 
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Properties;
+
+import org.apache.log4j.Logger;
 
 /**
  * <li>说明 Java Properties属性文件操作类
@@ -12,9 +14,11 @@ import java.util.Properties;
 
 public class PropertiesTool {
 	
+	private final static Logger Log = Logger.getLogger(PropertiesTool.class);
+	
 	private static Properties props = new Properties();
 	//配置文件路径
-	private static final String CONFIG_FILE = "/resource/mqtt.properties";
+	private static final String CONFIG_FILE = System.getProperty("user.dir") + "/resource/mqtt.properties";
 	
 	static{
 		loadProperties(CONFIG_FILE);
@@ -30,7 +34,7 @@ public class PropertiesTool {
 	 */
 	private static void loadProperties(String propertyFilePath){
 		try {
-			InputStream in = PropertiesTool.class.getResourceAsStream(propertyFilePath);
+			FileInputStream in = new FileInputStream(propertyFilePath);
 			props = new Properties();
 			props.load(in);
 		} catch (IOException e) {

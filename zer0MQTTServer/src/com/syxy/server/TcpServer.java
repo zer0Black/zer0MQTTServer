@@ -8,13 +8,14 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Logger;
+
 import com.syxy.Aiohandler.AioAcceptHandler;
 import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
 import com.syxy.protocol.CoderHandler;
 import com.syxy.protocol.DecoderHandler;
 import com.syxy.protocol.ProcessHandler;
-import com.syxy.util.Log;
 import com.syxy.util.PropertiesTool;
 
 /**
@@ -24,6 +25,8 @@ import com.syxy.util.PropertiesTool;
  */
 
 public class TcpServer {
+	
+	private final static Logger Log = Logger.getLogger(TcpServer.class);
 	
 	//系统常量配置
 	private static final String PORT = "port";//端口号
@@ -43,6 +46,8 @@ public class TcpServer {
 	private CoderHandler coderHandler;// 编码处理器
 	private DecoderHandler decoderHandler;// 解码处理器
 	private ProcessHandler processHandler;// 业务处理器
+	
+	ReadHandlerThread readHandlerThread;
 	
 	private ConcurrentHashMap<Object, ClientSession> clients = new ConcurrentHashMap<Object, ClientSession>();// 客户端链接映射表
 	
@@ -75,6 +80,7 @@ public class TcpServer {
 		this.decoderHandler = decoderHandler;
 		this.processHandler = processHandler;
 		
+		readHandlerThread = new ReadHandlerThread();
 		this.startMonitor();
 	}
 	
@@ -124,12 +130,9 @@ public class TcpServer {
 			
 			// 创建服务端异步socket
 			this.server = AsynchronousServerSocketChannel.open(resourceGroup); 
-			this.server.setOption(StandardSocketOptions.SO_KEEPALIVE, true);
-			this.server.setOption(StandardSocketOptions.SO_RCVBUF, sockectReceiveBufferSize * 1024);
-			this.server.setOption(StandardSocketOptions.SO_SNDBUF, sockectSendBufferSize * 1024);
 			this.server.bind(new InetSocketAddress(this.port), 200);  
 			this.acceptHandler = new AioAcceptHandler();
-			this.readHandler = new AioReadHandler();
+			this.readHandler = new AioReadHandler(this);
 			this.writeHandler = new AioWriteHandler();		
 		}catch(Exception e){
 			Log.error("服务器启动失败");
@@ -172,6 +175,14 @@ public class TcpServer {
 
 	public AtomicInteger getKeyIndex() {
 		return keyIndex;
+	}
+
+	public ReadHandlerThread getReadHandlerThread() {
+		return readHandlerThread;
+	}
+
+	public void setReadHandlerThread(ReadHandlerThread readHandlerThread) {
+		this.readHandlerThread = readHandlerThread;
 	}
 
 }

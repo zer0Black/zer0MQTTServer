@@ -2,10 +2,15 @@ package com.syxy.Aiohandler;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+import java.util.Iterator;
 
+import org.apache.log4j.Logger;
+
+import com.syxy.protocol.mqttImp.MQTTCoder;
+import com.syxy.protocol.mqttImp.MQTTDecoder;
+import com.syxy.protocol.mqttImp.MQTTProcess;
 import com.syxy.server.ClientSession;
 import com.syxy.server.TcpServer;
-import com.syxy.util.Log;
 
 /**
  * <li>说明 异步接收链接
@@ -15,6 +20,8 @@ import com.syxy.util.Log;
 
 public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, TcpServer>{
 
+	private final static Logger Log = Logger.getLogger(AioAcceptHandler.class);
+	
 	@Override
 	public void completed(AsynchronousSocketChannel socketChannel,
 			TcpServer attachment) {
@@ -36,6 +43,8 @@ public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketCha
 			index = attachment.getKeyIndex().incrementAndGet();
 			client.setIndex(index);// 设置索引
 			attachment.getClients().put(index, client);// 放入到连接中
+			
+			client.registeHandler(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess());
 			
 			//建立连接以后开启读事件
 			client.readEvent();

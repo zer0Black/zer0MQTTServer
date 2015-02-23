@@ -14,6 +14,6 @@ public class StartServer {
 	
 	public static void main(String[] args){
 		new TcpServer(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
+		while(true){}
 	}
-	
 }

@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 
 import com.syxy.protocol.DecoderHandler;
 import com.syxy.server.ClientSession;
+import com.syxy.util.coderTool;
 
 /**
  * <li>说明 MQTT协议解码
@@ -14,9 +15,10 @@ import com.syxy.server.ClientSession;
 public class MQTTDecoder implements DecoderHandler {
 
 	@Override
-	public ByteBuffer process(ByteBuffer byteBuffer, ClientSession client) {
+	public String process(ByteBuffer byteBuffer, ClientSession client) {
 		// TODO Auto-generated method stub
-		return null;
+		String str = coderTool.decode(byteBuffer);
+		return str;
 	}
 
 }

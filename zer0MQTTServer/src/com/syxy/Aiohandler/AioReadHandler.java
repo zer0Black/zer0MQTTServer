@@ -1,9 +1,12 @@
 package com.syxy.Aiohandler;
 
+import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.CompletionHandler;
 
+import org.apache.log4j.Logger;
+
 import com.syxy.server.ClientSession;
-import com.syxy.util.Log;
+import com.syxy.server.TcpServer;
 
 /**
  * <li>说明 异步读取数据
@@ -13,12 +16,19 @@ import com.syxy.util.Log;
 
 public class AioReadHandler implements CompletionHandler<Integer, ClientSession>{
 
+	private final static Logger Log = Logger.getLogger(AioReadHandler.class);
+	private TcpServer tcpServer;
+	
+	public AioReadHandler(TcpServer tcpServer){
+		this.tcpServer = tcpServer;
+	}
+	
 	@Override
 	public void completed(Integer result, ClientSession client) {
 		// TODO Auto-generated method stub
 		if (result < 0) {// 客户端关闭了连接  
 			client.close();  
-		     return;  
+		    return;  
 		 }
 		 
 		 if(result == 0){
@@ -27,7 +37,8 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 		 
 		 if (result > 0){// 读取到客户端的数据  
 		     try {
-		    	 
+		    	 Log.info("读取到客户端的数据");
+		    	 this.tcpServer.getReadHandlerThread().processResponse(client);
 			} catch (Exception e) {
 				Log.info(e.getMessage());
 			}     

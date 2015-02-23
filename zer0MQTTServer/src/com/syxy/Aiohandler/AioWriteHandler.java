@@ -1,7 +1,8 @@
 package com.syxy.Aiohandler;
 
-import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
+
+import org.apache.log4j.Logger;
 
 import com.syxy.server.ClientSession;
 
@@ -13,10 +14,14 @@ import com.syxy.server.ClientSession;
 
 public class AioWriteHandler implements CompletionHandler<Integer, ClientSession>{
 
+	private final static Logger Log = Logger.getLogger(AioWriteHandler.class);
+	
 	@Override
 	public void completed(Integer result, ClientSession client) {
 		// TODO Auto-generated method stub
-		
+		if(result > 0){
+//			client.getByteBuffer().clear();
+		}
 	}
 
 	@Override
