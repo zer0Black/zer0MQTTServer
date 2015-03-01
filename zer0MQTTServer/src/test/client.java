@@ -14,9 +14,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.Socket;
 
-import com.sun.security.ntlm.Client;
-
-
 public class client extends Frame implements ActionListener{
 
 Label label=new Label("交谈");

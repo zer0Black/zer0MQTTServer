@@ -1,6 +1,5 @@
 package com.syxy.Aiohandler;
 
-import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.CompletionHandler;
 
 import org.apache.log4j.Logger;
@@ -47,8 +46,8 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 
 	@Override
 	public void failed(Throwable exc, ClientSession client) {
-		// TODO Auto-generated method stub
-		
+		Log.warn("客户端(" + client.getIp() + ") 读操作失败");  
+		this.tcpServer.getReadHandlerThread().processResponse(client);
 	}
 	
 	public void cancelled(ClientSession client) {  

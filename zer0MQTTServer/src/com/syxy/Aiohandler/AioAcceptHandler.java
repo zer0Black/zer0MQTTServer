@@ -2,7 +2,6 @@ package com.syxy.Aiohandler;
 
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
-import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 

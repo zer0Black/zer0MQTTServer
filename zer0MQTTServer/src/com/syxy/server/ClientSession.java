@@ -1,12 +1,9 @@
 package com.syxy.server;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
-import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
@@ -39,7 +36,6 @@ public class ClientSession {
 	
 	private String requestMsg;//请求的信息
 	private ByteBuffer byteBuffer;// 缓冲区
-	private ByteBuffer writeByteBuffer;// 回写缓冲区
 	
 	private Object index;// 客户端在索引
 	
