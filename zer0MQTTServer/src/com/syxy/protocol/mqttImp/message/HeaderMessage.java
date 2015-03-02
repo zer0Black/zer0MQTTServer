@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp.message;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -8,6 +9,8 @@ import java.nio.ByteBuffer;
  * <li>创建日期 2015-3-2
  */
 public class HeaderMessage extends Message{
+	
+	private static int HEADER_SIZE = 2;
 	
 	private Type type;	//MQTT协议头前4bit，代表消息类型
 	private boolean dup; //MQTT协议头第5bit，代表打开标志，表示是否第一次发送
@@ -25,35 +28,23 @@ public class HeaderMessage extends Message{
 		this.retain = retain;
 	}
 
-	/**
-	 * <li>方法名 encodeHeader
-	 * <li>@param type
-	 * <li>@param dup
-	 * <li>@param qos
-	 * <li>@param retain
-	 * <li>返回类型 byte
-	 * <li>说明 对MQTT协议头部进行编码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-2
-	 */
-	public byte encodeHeader(Type type, boolean dup, QoS qos, boolean retain){
+
+	@Override
+	public ByteBuffer encode() throws IOException{
+		ByteBuffer buffer =ByteBuffer.allocate(HEADER_SIZE);
+		
 		byte b = 0;
 		b = (byte) (type.val << 4);
 		b |= dup ? 0x8 : 0x0;
 		b |= qos.val << 1;
 		b |= retain ? 0x1 : 0;
-		return b;			
+		buffer.put(b);
+		
+		return buffer;			
 	}
 	
-	/**
-	 * <li>方法名 decodeHeader
-	 * <li>@param buffer
-	 * <li>返回类型 HeaderMessage
-	 * <li>说明 对MQTT协议头部进行解码，并返回整个头部类
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-2
-	 */
-	public HeaderMessage decodeHeader(ByteBuffer buffer){
+	@Override
+	public Message decode(ByteBuffer buffer) throws IOException{
 		byte headerData = buffer.get();
 		HeaderMessage header = new HeaderMessage();
 		

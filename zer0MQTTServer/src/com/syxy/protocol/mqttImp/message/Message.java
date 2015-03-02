@@ -65,20 +65,24 @@ public abstract class Message {
 		}
 	}
 	
-//	protected void writeMessage(OutputStream out) throws IOException {
-//		
-//	}
-	
-//	public abstract void encode(ByteBuffer in) throws IOException {
-//		
-//	}
-//	
-//	public abstract void decode(ByteBuffer byteBuffer) throws IOException{}
-//	
-//	private final void write(OutputStream out) throws IOException {
-//		out.write(header.encode());
-//		writeMsgLength(out);
-//		writeMessage(out);
-//	}
+	/**
+	 * <li>方法名 encodeHeader
+	 * <li>返回类型 byte
+	 * <li>说明 对MQTT协议进行编码
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-2
+	 */
+	public abstract ByteBuffer encode() throws IOException;
+
+	/**
+	 * <li>方法名 decode
+	 * <li>@param buffer
+	 * <li>返回类型 HeaderMessage
+	 * <li>说明 对MQTT协议头部进行解码，并返回整个头部类
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-2
+	 */
+	public abstract Message decode(ByteBuffer byteBuffer) throws IOException;
+
 	
 }
