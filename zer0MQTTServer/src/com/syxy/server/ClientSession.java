@@ -182,7 +182,8 @@ public class ClientSession {
 	 * <li>创建日期 2015-2-22
 	 */
 	public void processBlankRead(){
-		this.close();
+		//暂不处理
+//		this.close();
 	}
 	
 	/**
