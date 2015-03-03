@@ -1,5 +1,11 @@
 package com.syxy.util;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
+import sun.rmi.runtime.Log;
+
 /**
  * <li>说明 字符串工具类
  * <li>作者 zer0
@@ -32,6 +38,28 @@ public class StringTool {
 			return true;
 		}
 		return false;
+	}
+	
+	/**
+	 * <li>方法名 stringToByte
+	 * <li>@param string
+	 * <li>返回类型 byte[]
+	 * <li>说明 将字符串转换为byte数组
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-3
+	 */
+	public static byte[] stringToByte(String string) {
+		if (string == null) {
+			return new byte[0];
+		}
+		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+		DataOutputStream dos = new DataOutputStream(byteOut);
+		try {
+			dos.writeUTF(string);
+		} catch (IOException e) {
+			return new byte[0];
+		}
+		return byteOut.toByteArray();
 	}
 	
 }

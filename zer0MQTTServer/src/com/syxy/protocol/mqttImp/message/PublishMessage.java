@@ -3,15 +3,17 @@ package com.syxy.protocol.mqttImp.message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.syxy.protocol.Message;
+
 /**
  * <li>MQTT协议Publish消息类型实现类，发布消息的消息类型
  * <li>作者 zer0
  * <li>创建日期 2015-3-2
  */
-public class PublishMessage extends Message {
+public class PublishMessage extends HeaderMessage {
 
 	@Override
-	public ByteBuffer encode() throws IOException {
+	public byte[] encode() throws IOException {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -21,5 +23,10 @@ public class PublishMessage extends Message {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	
+	@Override
+	public void handlerMessage() {
+		// TODO Auto-generated method stub
+		
+	}
 }

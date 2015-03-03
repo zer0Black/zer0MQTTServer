@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp;
 
+import com.syxy.protocol.Message;
 import com.syxy.protocol.ProcessHandler;
 import com.syxy.server.ClientSession;
 
@@ -12,7 +13,7 @@ import com.syxy.server.ClientSession;
 public class MQTTProcess implements ProcessHandler {
 
 	@Override
-	public void process(ClientSession client) {
+	public void process(Message msg, ClientSession client) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -16,11 +16,11 @@ public interface DecoderHandler {
 	 * <li>方法名 process
 	 * <li>@param client
 	 * <li>@param byteBuffer
-	 * <li>返回类型 String
+	 * <li>返回类型 Message
 	 * <li>说明 对处理后的结果数据进行解码，并将解码后的请求响应设置给client
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-16
 	 */
-	public String process(ByteBuffer byteBuffer, ClientSession client);
+	public Message process(ByteBuffer byteBuffer, ClientSession client);
 	
 }

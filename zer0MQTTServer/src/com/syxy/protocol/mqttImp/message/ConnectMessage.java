@@ -8,12 +8,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+import com.syxy.protocol.Message;
+import com.syxy.util.StringTool;
+
 /**
  * <li>MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型
  * <li>作者 zer0
  * <li>创建日期 2015-3-2
  */
-public class ConnectMessage extends Message {
+public class ConnectMessage extends HeaderMessage {
 
 	private static int CONNECT_HEADER_SIZE = 12;
 	private int CONNECT_SIZE;//connect消息类型总长度（头+消息体）
@@ -40,12 +43,9 @@ public class ConnectMessage extends Message {
 	private String username;//如果设置User Name标识，可以在此读取用户名称
 	private String password;//如果设置Password标识，便可读取用户密码
 	
-	
 	@Override
-	public ByteBuffer encode() throws IOException {
+	public byte[] encode() throws IOException {
 		// TODO Auto-generated method stub
-		
-		ByteBuffer buffer =ByteBuffer.allocate(CONNECT_SIZE);
 		
 		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
 		DataOutputStream dos = new DataOutputStream(byteOut);
@@ -55,7 +55,7 @@ public class ConnectMessage extends Message {
 		
 		int flags = this.isCleanSession() ? 0x02 : 0;
 		flags |= this.isHasWill() ? 0x04 : 0;
-		flags |= this.getWillQoS() == null ? 0 : willQoS.val << 3;
+		flags |= this.getWillQoS() == null ? 0 : this.getWillQoS().val << 3;
 		flags |= this.isWillRetain() ? 0x20 : 0;
 		flags |= this.isHasPassword() ? 0x40 : 0;
 		flags |= this.isHasUsername() ? 0x80 : 0;
@@ -76,10 +76,10 @@ public class ConnectMessage extends Message {
 		
 		dos.flush();
 		
-		//将dos转换为byte[]
-		buffer.put(byteOut.toByteArray());
+		//将dos转换为byte[]，然后写入缓冲区
+		byte[] bArray = byteOut.toByteArray();
 		
-		return buffer;
+		return bArray;
 	}
 
 	@Override
@@ -122,6 +122,25 @@ public class ConnectMessage extends Message {
 		return connectMessage;
 	}
 
+	@Override
+	public void handlerMessage() {
+		// TODO Auto-generated method stub
+		
+	}
+	
+	@Override
+	public int messageLength(){
+		int payLoadSize = StringTool.stringToByte(clientId).length;
+		payLoadSize += StringTool.stringToByte(willTopic).length;
+		payLoadSize += StringTool.stringToByte(willMessage).length;
+		payLoadSize += StringTool.stringToByte(username).length;
+		payLoadSize += StringTool.stringToByte(password).length;
+		
+		this.CONNECT_SIZE = payLoadSize + CONNECT_HEADER_SIZE;
+		
+		return CONNECT_SIZE;
+	}
+	
 	public String getProtocolName() {
 		return protocolName;
 	}
@@ -232,6 +251,24 @@ public class ConnectMessage extends Message {
 
 	public void setPassword(String password) {
 		this.password = password;
+	}
+
+	@Override
+	public void setDup(boolean dup) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("CONNECT消息类型不支持DUP flag");
+	}
+
+	@Override
+	public void setQos(QoS qos) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("CONNECT消息类型不支持QoS");
+	}
+
+	@Override
+	public void setRetain(boolean retain) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("CONNECT消息类型不支持RETAIN flag");
 	}
 	
 }

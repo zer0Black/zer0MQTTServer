@@ -12,6 +12,7 @@ import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
 import com.syxy.protocol.CoderHandler;
 import com.syxy.protocol.DecoderHandler;
+import com.syxy.protocol.Message;
 import com.syxy.protocol.ProcessHandler;
 
 /**
@@ -38,6 +39,8 @@ public class ClientSession {
 	private ByteBuffer byteBuffer;// 缓冲区
 	
 	private Object index;// 客户端在索引
+	
+	private Message msg;//协议对象
 	
 	public ClientSession(AsynchronousSocketChannel socketChannel, 
 			AioReadHandler readHandler, 
@@ -101,7 +104,8 @@ public class ClientSession {
 		boolean returnValue = false;// 返回值	,若数据处理完毕无问题，改为true
 		
 		this.byteBuffer.flip();
-		this.requestMsg = this.decoderHandler.process(this.byteBuffer, this);
+//		this.requestMsg = this.decoderHandler.process(this.byteBuffer, this);
+		this.msg = this.decoderHandler.process(this.byteBuffer, this);
 		this.byteBuffer.clear();
 		
 		returnValue = true;
@@ -162,7 +166,7 @@ public class ClientSession {
 	 */
 	public void process(){
 		try{
-			this.processHandler.process(this);// 业务处理
+			this.processHandler.process(msg, this);// 业务处理
 			if(this.requestMsg.length() > 0){// 不为空进行写出信息
 				this.requestMsg = "服务端发回的信息：" + this.requestMsg;
 				ByteBuffer writeByteBuffer = this.coderHandler.process(this.requestMsg, this);// 协议编码处理
