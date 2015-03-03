@@ -1,7 +1,11 @@
 package com.syxy.protocol.mqttImp;
 
-import com.syxy.protocol.Message;
 import com.syxy.protocol.ProcessHandler;
+import com.syxy.protocol.mqttImp.message.ConnAckMessage;
+import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.Message;
+import com.syxy.protocol.mqttImp.message.PubAckMessage;
+import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.server.ClientSession;
 
 /**
@@ -14,8 +18,57 @@ public class MQTTProcess implements ProcessHandler {
 
 	@Override
 	public void process(Message msg, ClientSession client) {
-		// TODO Auto-generated method stub
 		
+		switch (msg.getType()) {
+		case CONNECT:
+			msg = new ConnectMessage();
+			msg.handlerMessage();
+			break;
+		case CONNACK:
+			msg = new ConnAckMessage();
+			msg.handlerMessage();
+			break;
+		case PUBLISH:
+			msg = new PublishMessage();
+			msg.handlerMessage();
+			break;
+		case PUBACK:
+			msg = new PubAckMessage();
+			msg.handlerMessage();
+			break;
+		case PUBREC:
+
+			break;
+		case PUBREL:
+
+			break;
+		case PUBCOMP:
+
+			break;
+		case SUBSCRIBE:
+
+			break;
+		case SUBACK:
+
+			break;
+		case UNSUBSCRIBE:
+
+			break;
+		case UNSUBACK:
+
+			break;
+		case PINGREQ:
+
+			break;
+		case PINGRESP:
+
+			break;
+		case DISCONNECT:
+
+			break;
+		default:
+			throw new UnsupportedOperationException("不支持" + msg.getType()+ "消息类型");
+		}
 	}
 
 }

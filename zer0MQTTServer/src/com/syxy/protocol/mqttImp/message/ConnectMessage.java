@@ -8,16 +8,22 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-import com.syxy.protocol.Message;
+import org.apache.log4j.Logger;
+
+import com.syxy.protocol.mqttImp.MQTTDecoder;
+import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.util.StringTool;
+import com.syxy.util.coderTool;
 
 /**
  * <li>MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型
  * <li>作者 zer0
  * <li>创建日期 2015-3-2
  */
-public class ConnectMessage extends HeaderMessage {
+public class ConnectMessage extends Message {
 
+	private final static Logger Log = Logger.getLogger(ConnectMessage.class);
+	
 	private static int CONNECT_HEADER_SIZE = 12;
 	private int CONNECT_SIZE;//connect消息类型总长度（头+消息体）
 	
@@ -42,6 +48,14 @@ public class ConnectMessage extends HeaderMessage {
 	private String willMessage;
 	private String username;//如果设置User Name标识，可以在此读取用户名称
 	private String password;//如果设置Password标识，便可读取用户密码
+	
+	public ConnectMessage(){
+		
+	}
+	
+	public ConnectMessage(HeaderMessage headerMessage){
+		super(headerMessage);
+	}
 	
 	@Override
 	public byte[] encode() throws IOException {
@@ -83,7 +97,7 @@ public class ConnectMessage extends HeaderMessage {
 	}
 
 	@Override
-	public Message decode(ByteBuffer byteBuffer) throws IOException {
+	public Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException {
 		// TODO Auto-generated method stub
 		//将byteBuffer转换成DataInputStream，方便调用readUTF方法来读取UTF数据
 		InputStream in = new ByteArrayInputStream(byteBuffer.array());
@@ -119,13 +133,15 @@ public class ConnectMessage extends HeaderMessage {
 			connectMessage.setPassword(dataInputStream.readUTF());
 		}
 		
+		byteBuffer.position(messageLength() - 1);
+		coderTool.removeReadedData(byteBuffer);
+		
 		return connectMessage;
 	}
 
 	@Override
 	public void handlerMessage() {
-		// TODO Auto-generated method stub
-		
+		Log.info("处理Connect的数据");
 	}
 	
 	@Override
@@ -270,5 +286,5 @@ public class ConnectMessage extends HeaderMessage {
 		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("CONNECT消息类型不支持RETAIN flag");
 	}
-	
+
 }

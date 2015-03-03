@@ -3,6 +3,7 @@ package com.syxy.util;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 
 import sun.rmi.runtime.Log;
 

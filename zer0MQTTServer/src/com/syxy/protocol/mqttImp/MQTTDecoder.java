@@ -6,12 +6,12 @@ import java.nio.ByteBuffer;
 import org.apache.log4j.Logger;
 
 import com.syxy.protocol.DecoderHandler;
-import com.syxy.protocol.Message;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
-import com.syxy.protocol.mqttImp.message.HeaderMessage;
+import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 import com.syxy.util.coderTool;
 
@@ -34,27 +34,25 @@ public class MQTTDecoder implements DecoderHandler {
 			if (byteBuffer.limit() > 2) {
 				HeaderMessage headerMessage = (HeaderMessage) HeaderMessage.decodeMessage(byteBuffer);
 				int messageLength = headerMessage.bytesToLength(byteBuffer);
-				
-				
 				Message msg = null;
 				
 				//解码头部后，声明出对应的消息类型
 				switch (headerMessage.getType()) {
 				case CONNECT:
-					msg = new ConnectMessage();
-					ConnectMessage connectMessage = (ConnectMessage) msg.decode(byteBuffer);
+					msg = new ConnectMessage(headerMessage);
+					ConnectMessage connectMessage = (ConnectMessage) msg.decode(byteBuffer, messageLength);
 					return connectMessage;
 				case CONNACK:
-					msg = new ConnAckMessage();
-					ConnAckMessage connAckMessage = (ConnAckMessage) msg.decode(byteBuffer);
+					msg = new ConnAckMessage(headerMessage);
+					ConnAckMessage connAckMessage = (ConnAckMessage) msg.decode(byteBuffer, messageLength);
 					return connAckMessage;
 				case PUBLISH:
-					msg = new PublishMessage();
-					PublishMessage publishMessage = (PublishMessage) msg.decode(byteBuffer);
+					msg = new PublishMessage(headerMessage);
+					PublishMessage publishMessage = (PublishMessage) msg.decode(byteBuffer, messageLength);
 					return publishMessage;
 				case PUBACK:
-					msg = new PubAckMessage();
-					PubAckMessage pubAckMessage = (PubAckMessage) msg.decode(byteBuffer);
+					msg = new PubAckMessage(headerMessage);
+					PubAckMessage pubAckMessage = (PubAckMessage) msg.decode(byteBuffer, messageLength);
 					return pubAckMessage;
 				case PUBREC:
 

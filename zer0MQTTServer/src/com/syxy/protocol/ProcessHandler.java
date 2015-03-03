@@ -1,5 +1,6 @@
 package com.syxy.protocol;
 
+import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.server.ClientSession;
 
 /**
