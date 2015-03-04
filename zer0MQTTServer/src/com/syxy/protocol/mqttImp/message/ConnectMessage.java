@@ -1,18 +1,16 @@
 package com.syxy.protocol.mqttImp.message;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import com.syxy.protocol.mqttImp.MQTTDecoder;
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
+import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.server.ClientSession;
 import com.syxy.util.StringTool;
 import com.syxy.util.coderTool;
@@ -26,11 +24,11 @@ public class ConnectMessage extends Message {
 
 	private final static Logger Log = Logger.getLogger(ConnectMessage.class);
 	
-	private static int CONNECT_HEADER_SIZE = 12;
+	private static int CONNECT_HEADER_SIZE = 10;
 	private int CONNECT_SIZE;//connect消息类型总长度（头+消息体）
 	
-	private String protocolName = "MQIsdp";//协议规定的协议名
-	private byte protocolVersionNumber = 3;//协议版本号
+	private String protocolName = "MQTT";//协议规定的协议名
+	private byte protocolVersionNumber = 4;//MQTT_v3.1.1协议的版本号
 	
 	//Connect Flags的六个参数
 	private boolean hasUsername;//是否有用户名，与密码一起，要么都为0，要么都为1，否则无效
@@ -41,6 +39,7 @@ public class ConnectMessage extends Message {
 	private boolean hasWill;//是否设置遗嘱，设置以后，遗嘱生效。遗嘱就是客户端预先定义好，在自己
 	                        //异常断开的情况下，所留下的最后遗愿
 	private boolean cleanSession;//是否清理session
+	private boolean reserved;//协议的保留位，此位必须校验且必须为0，不为0则断开连接
 	
 	private int keepAlive;//心跳包时长
 	
@@ -61,46 +60,44 @@ public class ConnectMessage extends Message {
 	
 	@Override
 	public byte[] encode() throws IOException {
-		// TODO Auto-generated method stub
-		
-		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
-		DataOutputStream dos = new DataOutputStream(byteOut);
-		
-		dos.writeUTF(this.getProtocolName());
-		dos.write(this.getProtocolVersionNumber());
-		
-		int flags = this.isCleanSession() ? 0x02 : 0;
-		flags |= this.isHasWill() ? 0x04 : 0;
-		flags |= this.getWillQoS() == null ? 0 : this.getWillQoS().val << 3;
-		flags |= this.isWillRetain() ? 0x20 : 0;
-		flags |= this.isHasPassword() ? 0x40 : 0;
-		flags |= this.isHasUsername() ? 0x80 : 0;
-		dos.write((byte)flags);
-		dos.writeChar(this.getKeepAlive());
-		
-		dos.writeUTF(this.getClientId());
-		if (this.isHasWill()) {
-			dos.writeUTF(this.getWillTopic());
-			dos.writeUTF(this.getWillMessage());
-		}
-		if (this.isHasUsername()) {
-			dos.writeUTF(this.getUsername());
-		}
-		if (this.isHasPassword()) {
-			dos.writeUTF(this.getPassword());
-		}
-		
-		dos.flush();
-		
-		//将dos转换为byte[]，然后写入缓冲区
-		byte[] bArray = byteOut.toByteArray();
-		
-		return bArray;
+		throw new UnsupportedOperationException("CONNECT仅能从客户端发送服务端，服务端不能发到客户端");
+//		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+//		DataOutputStream dos = new DataOutputStream(byteOut);
+//		
+//		dos.writeUTF(this.getProtocolName());
+//		dos.write(this.getProtocolVersionNumber());
+//		
+//		int flags = this.isCleanSession() ? 0x02 : 0;
+//		flags |= this.isHasWill() ? 0x04 : 0;
+//		flags |= this.getWillQoS() == null ? 0 : this.getWillQoS().val << 3;
+//		flags |= this.isWillRetain() ? 0x20 : 0;
+//		flags |= this.isHasPassword() ? 0x40 : 0;
+//		flags |= this.isHasUsername() ? 0x80 : 0;
+//		dos.write((byte)flags);
+//		dos.writeChar(this.getKeepAlive());
+//		
+//		dos.writeUTF(this.getClientId());
+//		if (this.isHasWill()) {
+//			dos.writeUTF(this.getWillTopic());
+//			dos.writeUTF(this.getWillMessage());
+//		}
+//		if (this.isHasUsername()) {
+//			dos.writeUTF(this.getUsername());
+//		}
+//		if (this.isHasPassword()) {
+//			dos.writeUTF(this.getPassword());
+//		}
+//		
+//		dos.flush();
+//		
+//		//将dos转换为byte[]，然后写入缓冲区
+//		byte[] bArray = byteOut.toByteArray();
+//		
+//		return bArray;
 	}
 
 	@Override
 	public Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException {
-		// TODO Auto-generated method stub
 		//将byteBuffer转换成DataInputStream，方便调用readUTF方法来读取UTF数据
 		InputStream in = new ByteArrayInputStream(byteBuffer.array());
 		DataInputStream dataInputStream = new DataInputStream(in);
@@ -144,7 +141,7 @@ public class ConnectMessage extends Message {
 	@Override
 	public void handlerMessage(ClientSession client) {
 		Log.info("处理Connect的数据");
-		client.writeMsgToReqClient(new ConnAckMessage());
+		client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.ACCEPTED, 1));
 	}
 	
 	@Override
@@ -224,6 +221,14 @@ public class ConnectMessage extends Message {
 		this.cleanSession = cleanSession;
 	}
 
+	public boolean isReserved() {
+		return reserved;
+	}
+
+	public void setReserved(boolean reserved) {
+		this.reserved = reserved;
+	}
+
 	public int getKeepAlive() {
 		return keepAlive;
 	}
@@ -270,24 +275,6 @@ public class ConnectMessage extends Message {
 
 	public void setPassword(String password) {
 		this.password = password;
-	}
-
-	@Override
-	public void setDup(boolean dup) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("CONNECT消息类型不支持DUP flag");
-	}
-
-	@Override
-	public void setQos(QoS qos) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("CONNECT消息类型不支持QoS");
-	}
-
-	@Override
-	public void setRetain(boolean retain) {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException("CONNECT消息类型不支持RETAIN flag");
 	}
 
 }

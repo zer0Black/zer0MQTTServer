@@ -111,7 +111,7 @@ public class ClientSession {
 		returnValue = true;
 		this.readEvent();
 		
-		Log.info("读取到的信息:" + this.msg.toString());	
+//		Log.info("读取到的信息:" + this.msg.toString());	
 		
 		return returnValue;
 	}
@@ -217,7 +217,11 @@ public class ClientSession {
 	public void writeMsgToReqClient(Message msg){
 		try {
 			ByteBuffer byteBuffer = this.encodeProtocol(msg);
+			Log.info("byteBuffer的position="+byteBuffer.position());
+			Log.info("byteBuffer的limit="+byteBuffer.limit());
 			byteBuffer.flip();
+			Log.info("byteBuffer flip后的position="+byteBuffer.position());
+			Log.info("byteBuffer flip后的limit="+byteBuffer.limit());
 			this.sendMsgToReqClient(byteBuffer);
 		} catch (Exception e) {
 			Log.error("回写数据给请求者出错，请检查");
@@ -255,7 +259,6 @@ public class ClientSession {
 		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
 		while(it.hasNext()){
 			ClientSession client = it.next();
-			byteBuffer.flip();
 			client.socketChannel.write(byteBuffer, this, this.writeHandler);
 		}
 	}
@@ -269,7 +272,6 @@ public class ClientSession {
 	 * <li>创建日期 2015-3-4
 	 */
 	private void sendMsgToReqClient(ByteBuffer byteBuffer) throws Exception{
-		byteBuffer.flip();
 		this.socketChannel.write(byteBuffer, this, this.writeHandler);
 	}
 	

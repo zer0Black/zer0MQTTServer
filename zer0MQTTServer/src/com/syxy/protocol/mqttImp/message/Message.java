@@ -1,9 +1,13 @@
 package com.syxy.protocol.mqttImp.message;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+
+import sun.rmi.runtime.Log;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
@@ -173,18 +177,21 @@ public abstract class Message {
 		 * <li>作者 zer0
 		 * <li>创建日期 2015-3-3
 		 */
-		public ByteBuffer lengthToBytes(Message msg)throws IOException {
+		public byte[] lengthToBytes(Message msg)throws IOException {
 		    int val = msg.messageLength();
-		    ByteBuffer byteBuffer = ByteBuffer.allocate(4);
+		    ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+			DataOutputStream dos = new DataOutputStream(byteOut);
 		    do {
 				byte b = (byte) (val & 0x7F);
 				val >>= 7;
 				if (val > 0) {
 					b |= 0x80;
 				}
-				byteBuffer.put(b);
+				dos.write(b);
 			} while (val > 0);
-		   return byteBuffer;
+		    
+		   byte[] bArray = byteOut.toByteArray();	   
+		   return bArray;
 		}
 		
 		@Override
@@ -245,27 +252,27 @@ public abstract class Message {
 		this.headerMessage.type = type;
 	}
 
-	public boolean isDup() {
-		return headerMessage.dup;
-	}
-
-	public void setDup(boolean dup) {
-		this.headerMessage.dup = dup;
-	}
-
-	public QoS getQos() {
-		return headerMessage.qos;
-	}
-
-	public void setQos(QoS qos) {
-		this.headerMessage.qos = qos;
-	}
-
-	public boolean isRetain() {
-		return headerMessage.retain;
-	}
-
-	public void setRetain(boolean retain) {
-		this.headerMessage.retain = retain;
-	}
+//	public boolean isDup() {
+//		return headerMessage.dup;
+//	}
+//
+//	public void setDup(boolean dup) {
+//		this.headerMessage.dup = dup;
+//	}
+//
+//	public QoS getQos() {
+//		return headerMessage.qos;
+//	}
+//
+//	public void setQos(QoS qos) {
+//		this.headerMessage.qos = qos;
+//	}
+//
+//	public boolean isRetain() {
+//		return headerMessage.retain;
+//	}
+//
+//	public void setRetain(boolean retain) {
+//		this.headerMessage.retain = retain;
+//	}
 }
