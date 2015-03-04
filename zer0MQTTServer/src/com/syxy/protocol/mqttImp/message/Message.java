@@ -7,6 +7,7 @@ import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
+import com.syxy.server.ClientSession;
 import com.syxy.util.coderTool;
 
 /**
@@ -20,6 +21,10 @@ public abstract class Message {
 	
 	public Message(){
 		
+	}
+	
+	public Message(Type type) {
+		headerMessage = new HeaderMessage(type, false, QoS.AT_MOST_ONCE, false);
 	}
 	
 	public Message(HeaderMessage headerMessage){
@@ -47,12 +52,13 @@ public abstract class Message {
 
 	/**
 	 * <li>方法名 handlerMessage
+	 * <li>@param client
 	 * <li>返回类型 void
-	 * <li>说明 根据协议，对解码后的信息做相应的处理
+	 * <li>说明 根据协议，对解码后的信息做相应的处理,即调用client来回写信息之类
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-3-3
 	 */
-	public abstract void handlerMessage();
+	public abstract void handlerMessage(ClientSession client);
 
 	/**
 	 * <li>方法名 messageLength
@@ -63,11 +69,12 @@ public abstract class Message {
 	 */
 	public abstract int messageLength();
 	
-	/**
+	
+	/****************************************************************
 	 * <li>MQTT协议头类
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-3-2
-	 */
+	 ****************************************************************/
 	public static class HeaderMessage extends Message{
 		
 //		private static int HEADER_SIZE = 2;
@@ -168,15 +175,16 @@ public abstract class Message {
 		 */
 		public ByteBuffer lengthToBytes(Message msg)throws IOException {
 		    int val = msg.messageLength();
+		    ByteBuffer byteBuffer = ByteBuffer.allocate(4);
 		    do {
-		         int digit = val % 128;
-		        val = val / 128;
-		         if (val > 0)
-		             digit = digit | 0x80;
-
-//		        out.write(digit);
-		   } while (val > 0);
-		   return null;
+				byte b = (byte) (val & 0x7F);
+				val >>= 7;
+				if (val > 0) {
+					b |= 0x80;
+				}
+				byteBuffer.put(b);
+			} while (val > 0);
+		   return byteBuffer;
 		}
 		
 		@Override
@@ -185,7 +193,7 @@ public abstract class Message {
 		}
 		         
 		@Override
-		public void handlerMessage() {
+		public void handlerMessage(ClientSession client) {
 			
 		}
 

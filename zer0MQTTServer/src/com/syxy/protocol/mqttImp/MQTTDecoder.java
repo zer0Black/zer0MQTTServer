@@ -26,9 +26,7 @@ public class MQTTDecoder implements DecoderHandler {
 	private final static Logger Log = Logger.getLogger(MQTTDecoder.class);
 
 	@Override
-	public Message process(ByteBuffer byteBuffer, ClientSession client) {
-		// TODO Auto-generated method stub
-//		String str = coderTool.decode(byteBuffer);
+	public Message process(ByteBuffer byteBuffer) {
 		try {
 			//首先判断缓存中的内容是否大于2个字节（MQTT协议头为2字节）	
 			if (byteBuffer.limit() > 2) {

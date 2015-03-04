@@ -3,6 +3,9 @@ package com.syxy.protocol.mqttImp.message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.syxy.protocol.mqttImp.Type;
+import com.syxy.server.ClientSession;
+
 
 /**
  * <li>MQTT协议Publish消息类型实现类，发布消息的消息类型
@@ -12,7 +15,7 @@ import java.nio.ByteBuffer;
 public class PublishMessage extends Message {
 	
 	public PublishMessage(){
-		
+		super(Type.PUBLISH);
 	}
 	
 	public PublishMessage(HeaderMessage headerMessage){
@@ -38,7 +41,7 @@ public class PublishMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage() {
+	public void handlerMessage(ClientSession client) {
 		// TODO Auto-generated method stub
 		
 	}

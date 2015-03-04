@@ -22,6 +22,6 @@ public interface DecoderHandler {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-16
 	 */
-	public Message process(ByteBuffer byteBuffer, ClientSession client);
+	public Message process(ByteBuffer byteBuffer);
 	
 }

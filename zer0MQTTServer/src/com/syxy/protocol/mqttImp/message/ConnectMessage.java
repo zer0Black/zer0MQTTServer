@@ -12,6 +12,8 @@ import org.apache.log4j.Logger;
 
 import com.syxy.protocol.mqttImp.MQTTDecoder;
 import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.Type;
+import com.syxy.server.ClientSession;
 import com.syxy.util.StringTool;
 import com.syxy.util.coderTool;
 
@@ -50,7 +52,7 @@ public class ConnectMessage extends Message {
 	private String password;//如果设置Password标识，便可读取用户密码
 	
 	public ConnectMessage(){
-		
+		super(Type.CONNECT);
 	}
 	
 	public ConnectMessage(HeaderMessage headerMessage){
@@ -140,8 +142,9 @@ public class ConnectMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage() {
+	public void handlerMessage(ClientSession client) {
 		Log.info("处理Connect的数据");
+		client.writeMsgToReqClient(new ConnAckMessage());
 	}
 	
 	@Override

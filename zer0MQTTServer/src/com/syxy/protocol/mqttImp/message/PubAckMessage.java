@@ -3,6 +3,9 @@ package com.syxy.protocol.mqttImp.message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.syxy.protocol.mqttImp.Type;
+import com.syxy.server.ClientSession;
+
 
 /**
  * <li>MQTT协议PubAck消息类型实现类，Publish确认的消息类型
@@ -13,7 +16,7 @@ public class PubAckMessage extends Message {
 
 	
 	public PubAckMessage(){
-		
+		super(Type.PUBACK);
 	}
 	
 	public PubAckMessage(HeaderMessage headerMessage){
@@ -33,7 +36,7 @@ public class PubAckMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage() {
+	public void handlerMessage(ClientSession client) {
 		// TODO Auto-generated method stub
 		
 	}

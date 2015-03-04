@@ -105,13 +105,13 @@ public class ClientSession {
 		
 		this.byteBuffer.flip();
 //		this.requestMsg = this.decoderHandler.process(this.byteBuffer, this);
-		this.msg = this.decoderHandler.process(this.byteBuffer, this);
+		this.msg = this.decoderHandler.process(this.byteBuffer);
 		this.byteBuffer.clear();
 		
 		returnValue = true;
 		this.readEvent();
 		
-		Log.info("读取到的信息:" + this.requestMsg);	
+		Log.info("读取到的信息:" + this.msg.toString());	
 		
 		return returnValue;
 	}
@@ -160,18 +160,13 @@ public class ClientSession {
 	/**
 	 * <li>方法名 process
 	 * <li>返回类型 void
-	 * <li>说明 处理读取的数据，处理完之后进行编码，通过AioWriteHandler回写到客户端
+	 * <li>说明 处理读取的数据，在处理的函数中来调用回写函数，并告诉回写函数该写哪些内容
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-22
 	 */
 	public void process(){
 		try{
 			this.processHandler.process(msg, this);// 业务处理
-			if(this.requestMsg.length() > 0){// 不为空进行写出信息
-				this.requestMsg = "服务端发回的信息：" + this.requestMsg;
-				ByteBuffer writeByteBuffer = this.coderHandler.process(this.requestMsg, this);// 协议编码处理
-				this.writeMessage(writeByteBuffer);// 回写数据
-			}
 		}catch(Exception e){
 			e.printStackTrace();
 			this.close();
@@ -191,21 +186,91 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 writeMessage
-	 * <li>@param buffer
+	 * <li>方法名 writeMsgToEveryOne
+	 * <li>@param msg
+	 * <li>@param byteBuffer
+	 * <li>返回类型 void
+	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-4
+	 */
+	public void writeMsgToEveryOne(Message msg){
+		try {
+			ByteBuffer byteBuffer = this.encodeProtocol(msg);
+			byteBuffer.flip();
+			this.sendMsgToEveryOne(byteBuffer);
+		} catch (Exception e) {
+			Log.error("回写数据给所有人出错，请检查");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * <li>方法名 writeMsgToEveryOne
+	 * <li>@param msg
+	 * <li>@param byteBuffer
+	 * <li>返回类型 void
+	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-4
+	 */
+	public void writeMsgToReqClient(Message msg){
+		try {
+			ByteBuffer byteBuffer = this.encodeProtocol(msg);
+			byteBuffer.flip();
+			this.sendMsgToReqClient(byteBuffer);
+		} catch (Exception e) {
+			Log.error("回写数据给请求者出错，请检查");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * <li>方法名 encodeProtocol
+	 * <li>@param msg
+	 * <li>返回类型 void
+	 * <li>说明 对协议进行编码，针对相应消息类型编码
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-4
+	 * @throws IOException 
+	 */
+	private ByteBuffer encodeProtocol(Message msg) throws IOException{
+		if (msg != null) {
+			ByteBuffer byteBuffer = this.coderHandler.process(msg);// 协议编码处理
+			return byteBuffer;
+		}	
+		return null;
+	}
+	
+	/**
+	 * <li>方法名 sendMsgToEveryOne
+	 * <li>@param byteBuffer
 	 * <li>返回类型 void
 	 * <li>说明 回写数据
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-22
 	 */
-	public void writeMessage(ByteBuffer buffer) throws Exception{	
-		Log.info("回写数据");
+	private void sendMsgToEveryOne(ByteBuffer byteBuffer) throws Exception{	
+		Log.info("回写数据给所有客户端");
 		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
 		while(it.hasNext()){
 			ClientSession client = it.next();
-			buffer.flip();
-			client.socketChannel.write(buffer, this, this.writeHandler);
+			byteBuffer.flip();
+			client.socketChannel.write(byteBuffer, this, this.writeHandler);
 		}
+	}
+	
+	/**
+	 * <li>方法名 sendMsgToReqClient
+	 * <li>@param byteBuffer
+	 * <li>返回类型 void
+	 * <li>说明 回写数据给请求的客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-4
+	 */
+	private void sendMsgToReqClient(ByteBuffer byteBuffer) throws Exception{
+		byteBuffer.flip();
+		this.socketChannel.write(byteBuffer, this, this.writeHandler);
 	}
 	
 	public Object getIndex() {

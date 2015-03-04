@@ -22,19 +22,19 @@ public class MQTTProcess implements ProcessHandler {
 		switch (msg.getType()) {
 		case CONNECT:
 			msg = new ConnectMessage();
-			msg.handlerMessage();
+			msg.handlerMessage(client);
 			break;
 		case CONNACK:
 			msg = new ConnAckMessage();
-			msg.handlerMessage();
+			msg.handlerMessage(client);
 			break;
 		case PUBLISH:
 			msg = new PublishMessage();
-			msg.handlerMessage();
+			msg.handlerMessage(client);
 			break;
 		case PUBACK:
 			msg = new PubAckMessage();
-			msg.handlerMessage();
+			msg.handlerMessage(client);
 			break;
 		case PUBREC:
 

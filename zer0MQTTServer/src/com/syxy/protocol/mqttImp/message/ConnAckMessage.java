@@ -3,6 +3,9 @@ package com.syxy.protocol.mqttImp.message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+import com.syxy.protocol.mqttImp.Type;
+import com.syxy.server.ClientSession;
+
 
 /**
  * <li>MQTT协议ConnAck消息类型实现类，连接确认消息类型
@@ -11,7 +14,9 @@ import java.nio.ByteBuffer;
  */
 public class ConnAckMessage extends Message {
 	
-	public ConnAckMessage(){}
+	public ConnAckMessage(){
+		super(Type.CONNACK);
+	}
 	
 	public ConnAckMessage(HeaderMessage headerMessage){
 		super(headerMessage);
@@ -29,7 +34,7 @@ public class ConnAckMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage() {
+	public void handlerMessage(ClientSession client) {
 		// TODO Auto-generated method stub
 		
 	}
