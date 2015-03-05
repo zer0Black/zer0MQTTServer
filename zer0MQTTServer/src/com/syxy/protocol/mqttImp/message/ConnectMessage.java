@@ -12,6 +12,7 @@ import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.server.ClientSession;
+import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 import com.syxy.util.coderTool;
 
@@ -24,7 +25,7 @@ public class ConnectMessage extends Message {
 
 	private final static Logger Log = Logger.getLogger(ConnectMessage.class);
 	
-	private static int CONNECT_HEADER_SIZE = 10;
+	private static final int CONNECT_HEADER_SIZE = 10;
 	private int CONNECT_SIZE;//connect消息类型总长度（头+消息体）
 	
 	private String protocolName = "MQTT";//协议规定的协议名
@@ -132,8 +133,15 @@ public class ConnectMessage extends Message {
 			connectMessage.setPassword(dataInputStream.readUTF());
 		}
 		
-		byteBuffer.position(messageLength() - 1);
-		coderTool.removeReadedData(byteBuffer);
+		
+		//必须再把协议头的解码对象添加进来一起返回
+		connectMessage.setHeaderMessage(this.getHeaderMessage());
+				
+		System.out.println("messageLength="+messageLength);
+		System.out.println("messageLength(connectMessage)="+this.messageLength(connectMessage));
+		
+		byteBuffer.position(messageLength);
+		BufferPool.removeReadedData(byteBuffer);
 		
 		return connectMessage;
 	}
@@ -145,16 +153,24 @@ public class ConnectMessage extends Message {
 	}
 	
 	@Override
-	public int messageLength(){
-		int payLoadSize = StringTool.stringToByte(clientId).length;
-		payLoadSize += StringTool.stringToByte(willTopic).length;
-		payLoadSize += StringTool.stringToByte(willMessage).length;
-		payLoadSize += StringTool.stringToByte(username).length;
-		payLoadSize += StringTool.stringToByte(password).length;
+	public int messageLength(Message msg){
+		ConnectMessage connectMessage = (ConnectMessage)msg;
+		
+		int payLoadSize = StringTool.stringToByte(connectMessage.clientId).length;
+		payLoadSize += StringTool.stringToByte(connectMessage.willTopic).length;
+		payLoadSize += StringTool.stringToByte(connectMessage.willMessage).length;
+		payLoadSize += StringTool.stringToByte(connectMessage.username).length;
+		payLoadSize += StringTool.stringToByte(connectMessage.password).length;
 		
 		this.CONNECT_SIZE = payLoadSize + CONNECT_HEADER_SIZE;
 		
 		return CONNECT_SIZE;
+	}
+	
+	@Override
+	public boolean isMessageIdRequired() {
+		// TODO Auto-generated method stub
+		return false;
 	}
 	
 	public String getProtocolName() {

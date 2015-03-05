@@ -35,7 +35,7 @@ public class ClientSession {
 	private AioReadHandler readHandler;// 读取处理器
 	private AioWriteHandler writeHandler;// 回写处理器	
 	
-	private String requestMsg;//请求的信息
+//	private String requestMsg;//请求的信息
 	private ByteBuffer byteBuffer;// 缓冲区
 	
 	private Object index;// 客户端在索引
@@ -82,7 +82,6 @@ public class ClientSession {
 			if (this.socketChannel.isOpen()){
 				this.byteBuffer = ByteBuffer.allocate(1024 * 64);    
 	            this.socketChannel.read(this.byteBuffer, this, this.readHandler); 
-//	            Log.info("bytebuffer="+ this.byteBuffer.toString());
 	        } else {  
 	            Log.info("会话被取消或者关闭");  
 	        }
@@ -104,14 +103,11 @@ public class ClientSession {
 		boolean returnValue = false;// 返回值	,若数据处理完毕无问题，改为true
 		
 		this.byteBuffer.flip();
-//		this.requestMsg = this.decoderHandler.process(this.byteBuffer, this);
 		this.msg = this.decoderHandler.process(this.byteBuffer);
 		this.byteBuffer.clear();
 		
 		returnValue = true;
 		this.readEvent();
-		
-//		Log.info("读取到的信息:" + this.msg.toString());	
 		
 		return returnValue;
 	}

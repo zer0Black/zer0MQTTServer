@@ -15,7 +15,6 @@ public interface DecoderHandler {
 
 	/**
 	 * <li>方法名 process
-	 * <li>@param client
 	 * <li>@param byteBuffer
 	 * <li>返回类型 Message
 	 * <li>说明 对处理后的结果数据进行解码，并将解码后的请求响应设置给client

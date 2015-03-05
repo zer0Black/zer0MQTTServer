@@ -36,17 +36,4 @@ public class coderTool {
 		return charset.decode(byteBuffer).toString();
 	}
 	
-	/**
-	 * <li>方法名 removeReadedData
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 移除bytebuffer中的已读数据
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-3
-	 */
-	public static void removeReadedData(ByteBuffer byteBuffer){
-		byteBuffer.compact();
-	    byteBuffer.flip();
-	}
-	
 }

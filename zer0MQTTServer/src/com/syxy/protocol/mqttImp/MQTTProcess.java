@@ -21,50 +21,19 @@ public class MQTTProcess implements ProcessHandler {
 		
 		switch (msg.getType()) {
 		case CONNECT:
-			msg = new ConnectMessage();
-			msg.handlerMessage(client);
-			break;
 		case CONNACK:
-			msg = new ConnAckMessage();
-			msg.handlerMessage(client);
-			break;
 		case PUBLISH:
-			msg = new PublishMessage();
-			msg.handlerMessage(client);
-			break;
 		case PUBACK:
-			msg = new PubAckMessage();
-			msg.handlerMessage(client);
-			break;
 		case PUBREC:
-
-			break;
 		case PUBREL:
-
-			break;
 		case PUBCOMP:
-
-			break;
 		case SUBSCRIBE:
-
-			break;
-		case SUBACK:
-
-			break;
 		case UNSUBSCRIBE:
-
-			break;
 		case UNSUBACK:
-
-			break;
 		case PINGREQ:
-
-			break;
 		case PINGRESP:
-
-			break;
 		case DISCONNECT:
-
+			msg.handlerMessage(client);
 			break;
 		default:
 			throw new UnsupportedOperationException("不支持" + msg.getType()+ "消息类型");

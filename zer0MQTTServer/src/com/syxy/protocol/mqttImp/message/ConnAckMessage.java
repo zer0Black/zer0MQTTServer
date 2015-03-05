@@ -107,10 +107,16 @@ public class ConnAckMessage extends Message {
 	}
 
 	@Override
-	public int messageLength() {
+	public int messageLength(Message msg) {
 		return CONNACK_SIZE;
 	}
 
+	@Override
+	public boolean isMessageIdRequired() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+	
 	public ConnectionStatus getStatus() {
 		return status;
 	}
@@ -127,5 +133,4 @@ public class ConnAckMessage extends Message {
 		this.sessionPresent = sessionPresent;
 	}
 
-	
 }

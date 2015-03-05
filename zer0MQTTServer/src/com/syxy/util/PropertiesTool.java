@@ -58,7 +58,7 @@ public class PropertiesTool {
 	/**
 	 * <li>方法名 getProperty
 	 * <li>@param key
-	 * <li>返回类型 String
+	 * <li>返回类型 Integer
 	 * <li>说明 从指定的键取得整数
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-19

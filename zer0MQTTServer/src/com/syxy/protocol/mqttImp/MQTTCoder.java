@@ -24,16 +24,23 @@ import com.syxy.util.coderTool;
 public class MQTTCoder implements CoderHandler {
 	
 	private final static Logger Log = Logger.getLogger(MQTTCoder.class);
+	//定死回写的缓冲区为2m，以后再修改
+	ByteBuffer byteBuffer = ByteBuffer.allocate(2048);
+
 	
 	//1、编码协议头第一字节
 	//2、编码协议头的第二字节remaining length
 	//3、编码消息类型
 	@Override
 	public ByteBuffer process(Message msg) throws IOException {
-		//定死回写的缓冲区为2m，以后再修改
-		ByteBuffer byteBuffer = ByteBuffer.allocate(2048);
+		
 		byteBuffer.clear();
 		HeaderMessage headerMessage = null;
+		
+		//先判断是否需要包ID，需要就给该消息类型加上一个包ID
+		if (msg.isMessageIdRequired() && (msg.getPackgeID() == 0)) {
+			msg.setPackgeID(Message.getNextMessageId());
+		}
 		
 		switch (msg.getType()) {
 		case CONNECT:
@@ -51,7 +58,7 @@ public class MQTTCoder implements CoderHandler {
 		case PUBACK:
 			headerMessage = new HeaderMessage(Type.PUBACK, false, QoS.AT_MOST_ONCE, false);
 			encoder(msg, headerMessage, byteBuffer);
-			break;
+			return byteBuffer;
 		case PUBREC:
 			headerMessage = new HeaderMessage(Type.PUBREC, false, QoS.AT_MOST_ONCE, false);
 			encoder(msg, headerMessage, byteBuffer);
@@ -95,18 +102,15 @@ public class MQTTCoder implements CoderHandler {
 		default:
 			throw new UnsupportedOperationException("不支持" + msg.getType()+ "消息类型");
 		}
-		return null;
+		return byteBuffer;
 
 	}
 
 	private void encoder(Message msg, HeaderMessage headerMessage, ByteBuffer buffer){		
 		try {
 			buffer.put(headerMessage.encode());
-			Log.info("bytebuffer的位置1="+buffer.position());
 			buffer.put(headerMessage.lengthToBytes(msg));
-			Log.info("bytebuffer的位置2="+buffer.position());
 			buffer.put(msg.encode());
-			Log.info("bytebuffer的位置3="+buffer.position());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

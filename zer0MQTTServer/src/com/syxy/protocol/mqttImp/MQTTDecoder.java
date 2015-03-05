@@ -28,30 +28,25 @@ public class MQTTDecoder implements DecoderHandler {
 	@Override
 	public Message process(ByteBuffer byteBuffer) {
 		try {
-			//首先判断缓存中的内容是否大于2个字节（MQTT协议头为2字节）	
+			//首先判断缓存中协议头是否读完（MQTT协议头为2字节）	
 			if (byteBuffer.limit() > 2) {
 				HeaderMessage headerMessage = (HeaderMessage) HeaderMessage.decodeMessage(byteBuffer);
-				int messageLength = headerMessage.bytesToLength(byteBuffer);
 				Message msg = null;
 				
 				//解码头部后，声明出对应的消息类型
 				switch (headerMessage.getType()) {
 				case CONNECT:
-					msg = new ConnectMessage(headerMessage);
-					ConnectMessage connectMessage = (ConnectMessage) msg.decode(byteBuffer, messageLength);
-					return connectMessage;
+					msg = new ConnectMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case CONNACK:
-					msg = new ConnAckMessage(headerMessage);
-					ConnAckMessage connAckMessage = (ConnAckMessage) msg.decode(byteBuffer, messageLength);
-					return connAckMessage;
+					msg = new ConnAckMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PUBLISH:
-					msg = new PublishMessage(headerMessage);
-					PublishMessage publishMessage = (PublishMessage) msg.decode(byteBuffer, messageLength);
-					return publishMessage;
+					msg = new PublishMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PUBACK:
-					msg = new PubAckMessage(headerMessage);
-					PubAckMessage pubAckMessage = (PubAckMessage) msg.decode(byteBuffer, messageLength);
-					return pubAckMessage;
+					msg = new PubAckMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PUBREC:
 
 					break;
