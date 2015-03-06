@@ -43,10 +43,11 @@ public class ReadHandlerThread {
 	private void runWork(){
 		while(this.noStopRequested){
 			try{	
-				process(handoffBox.take());//接收数据进行处理				
+				process(handoffBox.take());//接收数据进行处理		
+				Thread.sleep(1);
 			}catch(Exception e){
 				e.printStackTrace();
-			}
+			}	
 		}
 	}
 	

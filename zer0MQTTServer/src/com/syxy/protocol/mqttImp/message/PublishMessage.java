@@ -53,7 +53,7 @@ public class PublishMessage extends Message {
 		}
 		dos.write(data);
 		
-		//将dos转换为byte[]，然后写入缓冲区
+		//将dos转换为byte[]
 		byte[] bArray = byteOut.toByteArray();	
 		return bArray;
 	}

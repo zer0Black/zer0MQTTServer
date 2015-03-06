@@ -26,7 +26,6 @@ public class PubRecMessage extends Message {
 	
 	@Override
 	public byte[] encode() throws IOException {
-		// TODO Auto-generated method stub
 		return this.encodePackageID();
 	}
 

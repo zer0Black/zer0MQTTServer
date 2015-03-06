@@ -14,6 +14,12 @@ public class StartServer {
 	
 	public static void main(String[] args){
 		new TcpServer(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
-		while(true){}
+		while(true){
+			try {
+				Thread.sleep(100000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

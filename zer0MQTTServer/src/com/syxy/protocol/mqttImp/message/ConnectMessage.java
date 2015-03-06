@@ -61,7 +61,7 @@ public class ConnectMessage extends Message {
 	
 	@Override
 	public byte[] encode() throws IOException {
-		throw new UnsupportedOperationException("CONNECT仅能从客户端发送服务端，服务端不能发到客户端");
+		throw new UnsupportedOperationException("CONNECT无需编码，该类型仅能从客户端发送服务端");
 //		ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
 //		DataOutputStream dos = new DataOutputStream(byteOut);
 //		
@@ -136,9 +136,6 @@ public class ConnectMessage extends Message {
 		
 		//必须再把协议头的解码对象添加进来一起返回
 		connectMessage.setHeaderMessage(this.getHeaderMessage());
-				
-		System.out.println("messageLength="+messageLength);
-		System.out.println("messageLength(connectMessage)="+this.messageLength(connectMessage));
 		
 		byteBuffer.position(messageLength);
 		BufferPool.removeReadedData(byteBuffer);
