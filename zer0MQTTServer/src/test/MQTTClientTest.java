@@ -43,7 +43,7 @@ public class MQTTClientTest extends JFrame {
   
         Container container = this.getContentPane();  
         panel = new JPanel();  
-        button = new JButton("��������");  
+        button = new JButton("pulish");  
         button.addActionListener(new ActionListener() {  
 
             public void actionPerformed(ActionEvent ae) {  
@@ -67,9 +67,7 @@ public class MQTTClientTest extends JFrame {
         options.setCleanSession(false);  
         options.setUserName(userName);  
         options.setPassword(passWord.toCharArray());  
-        // ���ó�ʱʱ��  
-        options.setConnectionTimeout(10);  
-        // ���ûỰ����ʱ��  
+        options.setConnectionTimeout(10);    
         options.setKeepAliveInterval(10000);  
         try {  
             client.setCallback(new MqttCallback() {  

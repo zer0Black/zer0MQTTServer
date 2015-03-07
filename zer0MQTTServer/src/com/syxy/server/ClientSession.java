@@ -7,13 +7,13 @@ import java.nio.channels.ClosedChannelException;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-
 import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
 import com.syxy.protocol.CoderHandler;
 import com.syxy.protocol.DecoderHandler;
 import com.syxy.protocol.ProcessHandler;
 import com.syxy.protocol.mqttImp.message.Message;
+import com.syxy.util.BufferPool;
 
 /**
  * <li>说明 客户session，每个连接一个ClientSession对象，用于处理客户请求和响应
@@ -80,7 +80,8 @@ public class ClientSession {
 		try {
 			//如果socket通道未关闭，就读数据
 			if (this.socketChannel.isOpen()){
-				this.byteBuffer = ByteBuffer.allocate(1024 * 64);    
+//				this.byteBuffer = ByteBuffer.allocate(1024 * 64);   
+				this.byteBuffer = BufferPool.getInstance().getBuffer();
 	            this.socketChannel.read(this.byteBuffer, this, this.readHandler); 
 	        } else {  
 	            Log.info("会话被取消或者关闭");  
@@ -94,7 +95,7 @@ public class ClientSession {
 	/**
 	 * <li>方法名 readRequest
 	 * <li>返回类型 boolean
-	 * <li>说明 读请求完成后，对得到的数据进行解码处理，以便能识别
+	 * <li>说明 读请求完成后，将得到的缓冲区写入程序的另一个缓冲区，如果此缓冲区进行解码处理，以便能识别
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-21
 	 */
@@ -105,6 +106,8 @@ public class ClientSession {
 		this.byteBuffer.flip();
 		this.msg = this.decoderHandler.process(this.byteBuffer);
 		this.byteBuffer.clear();
+		//使用完缓冲区以后释放
+		BufferPool.getInstance().releaseBuffer(this.byteBuffer);
 		
 		returnValue = true;
 		this.readEvent();
