@@ -124,7 +124,7 @@ public class ClientSession {
 	 */
 	public void close(){
 		try{
-			this.socketServer.closeServer(index);// 清除
+//			this.socketServer.closeServer(index);// 清除
 			this.socketChannel.close();		
 		} catch (ClosedChannelException e) {
 			e.printStackTrace();
@@ -184,25 +184,25 @@ public class ClientSession {
 //		this.close();
 	}
 	
-	/**
-	 * <li>方法名 writeMsgToEveryOne
-	 * <li>@param msg
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-4
-	 */
-	public void writeMsgToEveryOne(Message msg){
-		try {
-			ByteBuffer byteBuffer = this.encodeProtocol(msg);
-			byteBuffer.flip();
-			this.sendMsgToEveryOne(byteBuffer);
-		} catch (Exception e) {
-			Log.error("回写数据给所有人出错，请检查");
-			e.printStackTrace();
-		}
-	}
+//	/**
+//	 * <li>方法名 writeMsgToEveryOne
+//	 * <li>@param msg
+//	 * <li>@param byteBuffer
+//	 * <li>返回类型 void
+//	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
+//	 * <li>作者 zer0
+//	 * <li>创建日期 2015-3-4
+//	 */
+//	public void writeMsgToEveryOne(Message msg){
+//		try {
+//			ByteBuffer byteBuffer = this.encodeProtocol(msg);
+//			byteBuffer.flip();
+//			this.sendMsgToEveryOne(byteBuffer);
+//		} catch (Exception e) {
+//			Log.error("回写数据给所有人出错，请检查");
+//			e.printStackTrace();
+//		}
+//	}
 	
 	/**
 	 * <li>方法名 writeMsgToEveryOne
@@ -216,11 +216,11 @@ public class ClientSession {
 	public void writeMsgToReqClient(Message msg){
 		try {
 			ByteBuffer byteBuffer = this.encodeProtocol(msg);
-			Log.info("byteBuffer的position="+byteBuffer.position());
-			Log.info("byteBuffer的limit="+byteBuffer.limit());
+//			Log.info("byteBuffer的position="+byteBuffer.position());
+//			Log.info("byteBuffer的limit="+byteBuffer.limit());
 			byteBuffer.flip();
-			Log.info("byteBuffer flip后的position="+byteBuffer.position());
-			Log.info("byteBuffer flip后的limit="+byteBuffer.limit());
+//			Log.info("byteBuffer flip后的position="+byteBuffer.position());
+//			Log.info("byteBuffer flip后的limit="+byteBuffer.limit());
 			this.sendMsgToReqClient(byteBuffer);
 		} catch (Exception e) {
 			Log.error("回写数据给请求者出错，请检查");
@@ -245,22 +245,22 @@ public class ClientSession {
 		return null;
 	}
 	
-	/**
-	 * <li>方法名 sendMsgToEveryOne
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 回写数据
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-22
-	 */
-	private void sendMsgToEveryOne(ByteBuffer byteBuffer) throws Exception{	
-		Log.info("回写数据给所有客户端");
-		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
-		while(it.hasNext()){
-			ClientSession client = it.next();
-			client.socketChannel.write(byteBuffer, this, this.writeHandler);
-		}
-	}
+//	/**
+//	 * <li>方法名 sendMsgToEveryOne
+//	 * <li>@param byteBuffer
+//	 * <li>返回类型 void
+//	 * <li>说明 回写数据
+//	 * <li>作者 zer0
+//	 * <li>创建日期 2015-2-22
+//	 */
+//	private void sendMsgToEveryOne(ByteBuffer byteBuffer) throws Exception{	
+//		Log.info("回写数据给所有客户端");
+//		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
+//		while(it.hasNext()){
+//			ClientSession client = it.next();
+//			client.socketChannel.write(byteBuffer, this, this.writeHandler);
+//		}
+//	}
 	
 	/**
 	 * <li>方法名 sendMsgToReqClient

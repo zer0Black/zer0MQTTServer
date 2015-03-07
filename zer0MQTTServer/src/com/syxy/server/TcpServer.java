@@ -48,7 +48,7 @@ public class TcpServer {
 	
 	ReadHandlerThread readHandlerThread;
 	
-	private ConcurrentHashMap<Object, ClientSession> clients = new ConcurrentHashMap<Object, ClientSession>();// 客户端链接映射表
+//	private ConcurrentHashMap<Object, ClientSession> clients = new ConcurrentHashMap<Object, ClientSession>();// 客户端链接映射表
 	
 	private volatile Integer port;//服务器端口
 	private volatile boolean noStopRequested = true;// 循环控制变量
@@ -101,19 +101,19 @@ public class TcpServer {
 		}
 	}
 	
-	/**
-	 * <li>方法名 closeServer
-	 * <li>返回类型 void
-	 * <li>说明 删除指定的连接
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-21
-	 */
-	public void closeServer(Object index){
-		ClientSession client = this.clients.remove(index);// 从本地连接中清除
-		if(client != null){
-			return;
-		}
-	}
+//	/**
+//	 * <li>方法名 closeServer
+//	 * <li>返回类型 void
+//	 * <li>说明 删除指定的连接
+//	 * <li>作者 zer0
+//	 * <li>创建日期 2015-2-21
+//	 */
+//	public void closeServer(Object index){
+//		ClientSession client = this.clients.remove(index);// 从本地连接中清除
+//		if(client != null){
+//			return;
+//		}
+//	}
 	
 	/**
 	 * <li>方法名 startMonitor
@@ -164,13 +164,13 @@ public class TcpServer {
 		this.writeHandler = writeHandler;
 	}
 
-	public ConcurrentHashMap<Object, ClientSession> getClients() {
-		return clients;
-	}
-
-	public void setClients(ConcurrentHashMap<Object, ClientSession> clients) {
-		this.clients = clients;
-	}
+//	public ConcurrentHashMap<Object, ClientSession> getClients() {
+//		return clients;
+//	}
+//
+//	public void setClients(ConcurrentHashMap<Object, ClientSession> clients) {
+//		this.clients = clients;
+//	}
 
 	public AtomicInteger getKeyIndex() {
 		return keyIndex;

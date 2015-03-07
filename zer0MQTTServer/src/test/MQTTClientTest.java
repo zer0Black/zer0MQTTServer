@@ -34,7 +34,7 @@ public class MQTTClientTest extends JFrame {
     public MQTTClientTest() {  
   
         try {  
-            client = new MqttClient(host, "Server",  
+            client = new MqttClient(host, "",  
                     new MemoryPersistence());  
             connect();  
         } catch (Exception e) {  

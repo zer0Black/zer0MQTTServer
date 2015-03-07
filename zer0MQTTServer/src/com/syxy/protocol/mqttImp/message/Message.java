@@ -255,17 +255,9 @@ public abstract class Message {
 			HeaderMessage headerMessage = new HeaderMessage();
 			HeaderMessage returnMessage = headerMessage.decode(byteBuffer, 0);
 			returnMessage.setMessageLength(returnMessage.bytesToLength(byteBuffer));
-			
-			System.out.println("解码头部处bytebuffer的position="+byteBuffer.position());
-			System.out.println("解码头部处bytebuffer的limit="+byteBuffer.limit());
-			
 			//如果缓冲区的数据大于等于协议该有的数据，证明数据读取完毕
 			if (byteBuffer.limit() >= returnMessage.getMessageLength()) {
 				BufferPool.removeReadedData(byteBuffer);
-				
-				System.out.println("解码头部处bytebuffer移除已读后的position="+byteBuffer.position());
-				System.out.println("解码头部处bytebuffer移除已读后的limit="+byteBuffer.limit());
-				
 				return returnMessage;
 			}else{
 				return null;

@@ -40,7 +40,7 @@ public class ConnectMessage extends Message {
 	private boolean hasWill;//是否设置遗嘱，设置以后，遗嘱生效。遗嘱就是客户端预先定义好，在自己
 	                        //异常断开的情况下，所留下的最后遗愿
 	private boolean cleanSession;//是否清理session
-	private boolean reserved;//协议的保留位，此位必须校验且必须为0，不为0则断开连接
+	private boolean reservedIsZero;//协议的保留位，此位必须校验且必须为0，不为0则断开连接
 	
 	private int keepAlive;//心跳包时长
 	
@@ -115,6 +115,7 @@ public class ConnectMessage extends Message {
 		connectMessage.setWillQoS(QoS.valueOf(connectFlags >> 3 & 0x03));//0x03=00000011
 		connectMessage.setHasWill((connectFlags & 0x04) > 0);//0x04=00000100
 		connectMessage.setCleanSession((connectFlags & 0x02) > 0);//0x02=00000010
+		connectMessage.setReservedIsZero((connectFlags & 0x01) == 0 );//0x00=0000001
 		
 		connectMessage.setKeepAlive(dataInputStream.readShort());//读取心跳包
 		connectMessage.setClientId(dataInputStream.readUTF());//读取客户端ID
@@ -145,8 +146,21 @@ public class ConnectMessage extends Message {
 
 	@Override
 	public void handlerMessage(ClientSession client) {
-		Log.info("处理Connect的数据");
-		client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.ACCEPTED, 1));
+//		Log.info("处理Connect的数据");
+//		//首先查看保留位是否为0，不为0则断开连接
+//		if (!this.isReservedIsZero()) {
+//			client.close();
+//		}
+//		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0
+//		if (!this.getProtocolName().equals("MQTT") || this.getProtocolVersionNumber() != 4 ) {
+//			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
+//			client.close();//版本或协议名不匹配，则断开该客户端连接
+//		}
+		
+		
+		
+//		client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.ACCEPTED, 1));
+		
 	}
 	
 	@Override
@@ -234,12 +248,12 @@ public class ConnectMessage extends Message {
 		this.cleanSession = cleanSession;
 	}
 
-	public boolean isReserved() {
-		return reserved;
+	public boolean isReservedIsZero() {
+		return reservedIsZero;
 	}
 
-	public void setReserved(boolean reserved) {
-		this.reserved = reserved;
+	public void setReservedIsZero(boolean reservedIsZero) {
+		this.reservedIsZero = reservedIsZero;
 	}
 
 	public int getKeepAlive() {

@@ -6,6 +6,7 @@ import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.process.protocolProcess;
 import com.syxy.server.ClientSession;
 
 /**
@@ -16,11 +17,16 @@ import com.syxy.server.ClientSession;
 
 public class MQTTProcess implements ProcessHandler {
 
+	private protocolProcess protocolProcess = new protocolProcess();
+	
 	@Override
 	public void process(Message msg, ClientSession client) {
 		
 		switch (msg.getType()) {
 		case CONNECT:
+			ConnectMessage connectMessage = (ConnectMessage)msg;
+			protocolProcess.processConnect(client, connectMessage);
+			break;
 		case CONNACK:
 		case PUBLISH:
 		case PUBACK:

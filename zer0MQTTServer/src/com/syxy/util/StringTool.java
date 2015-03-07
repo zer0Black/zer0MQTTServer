@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Random;
 
 import sun.rmi.runtime.Log;
 
@@ -62,5 +63,24 @@ public class StringTool {
 		}
 		return byteOut.toByteArray();
 	}
+	
+	/**
+	 * <li>方法名 getRandomString
+	 * <li>@param length
+	 * <li>返回类型 length
+	 * <li>说明 随机生成字符串
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-7
+	 */
+	 public static String getRandomString(int length){
+	     String str="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	     Random random=new Random();
+	     StringBuffer sb=new StringBuffer();
+	     for(int i=0;i<length;i++){
+	       int number=random.nextInt(62);
+	       sb.append(str.charAt(number));
+	     }
+	     return sb.toString();
+	 }
 	
 }
