@@ -1,13 +1,18 @@
 package com.syxy.protocol.mqttImp.process;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.server.ClientSession;
+import com.syxy.util.Constant;
 import com.syxy.util.StringTool;
 
 /**
@@ -17,10 +22,43 @@ import com.syxy.util.StringTool;
  */
 public class protocolProcess {
 
+	//遗嘱信息类
+	static final class WillMessage {
+        private final String topic;
+        private final ByteBuffer payload;
+        private final boolean retained;
+        private final QoS qos;
+
+        public WillMessage(String topic, ByteBuffer payload, boolean retained, QoS qos) {
+            this.topic = topic;
+            this.payload = payload;
+            this.retained = retained;
+            this.qos = qos;
+        }
+
+        public String getTopic() {
+            return topic;
+        }
+
+        public ByteBuffer getPayload() {
+            return payload;
+        }
+
+        public boolean isRetained() {
+            return retained;
+        }
+
+        public QoS getQos() {
+            return qos;
+        }
+        
+    }
+	
 	private final static Logger Log = Logger.getLogger(protocolProcess.class);
 	
 	private ConcurrentHashMap<Object, ConnectionDescriptor> clients = new ConcurrentHashMap<Object, ConnectionDescriptor>();// 客户端链接映射表
-	
+    //存储遗嘱信息，通过ID映射遗嘱信息
+	private Map<String, WillMessage> willStore = new HashMap<>();
 	/**
 	 * <li>方法名 processConnect
 	 * <li>@param client
@@ -56,6 +94,54 @@ public class protocolProcess {
 		ConnectionDescriptor connectionDescriptor = 
 				new ConnectionDescriptor(connectMessage.getClientId(), client, connectMessage.isCleanSession());
 		this.clients.put(connectMessage.getClientId(), connectionDescriptor);
+		//处理心跳包时间，把心跳包时长和一些其他属性都添加到会话中，方便以后使用
+		int keepAlive = connectMessage.getKeepAlive();
+		Log.debug("Connect with keepAlive {" + keepAlive + "} s");
+		client.setAttributesKeys(Constant.CLIENT_ID, connectMessage.getClientId());//clientID属性用于subscribe和publish的处理
+		client.setAttributesKeys(Constant.CLEAN_SESSION, connectMessage.isCleanSession());
+		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive);
+		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接
+//		client.setIdleTime(Math.round(keepAlive * 1.5f));
 		
+		//处理Will flag（遗嘱信息）,协议P26
+		if (connectMessage.isHasWill()) {
+			QoS willQos = connectMessage.getWillQoS();
+			byte[] willPayload = connectMessage.getWillMessage().getBytes();//获取遗嘱信息的具体内容
+			ByteBuffer byteBuffer = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
+			WillMessage will = new WillMessage(connectMessage.getWillTopic(),
+					byteBuffer, connectMessage.isWillRetain(),willQos);
+			//把遗嘱信息与和其对应的的clientID存储在一起
+			willStore.put(connectMessage.getClientId(), will);
+		}
+		//处理身份验证（userNameFlag和passwordFlag）
+		if (connectMessage.isHasUsername()) {
+			String userName = connectMessage.getUsername();
+			String pwd = null;
+			if (connectMessage.isHasPassword()) {
+				 pwd = connectMessage.getPassword();
+			}
+			//此处对用户名和密码做验证
+		}
+		//处理cleanSession为1的情况
+        if (connectMessage.isCleanSession()) {
+            //移除所有之前的session并开启一个新的，并且原先保存的subscribe之类的都得从服务器删掉
+//            cleanSession(connectMessage.getClientID());
+        }
+        //处理回写的CONNACK,并回写，协议P29
+        ConnAckMessage okResp = new ConnAckMessage();
+        okResp.setStatus(ConnAckMessage.ConnectionStatus.ACCEPTED);
+        if (!connectMessage.isCleanSession()/* && sessionsStore.contains(msg.getClientID()*/) {
+        	okResp.setSessionPresent(1);
+		}else{
+			okResp.setSessionPresent(0);
+		}
+        client.writeMsgToReqClient(okResp);
+        Log.info("CONNACK处理完毕并成功发送");
+        Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
+        //如果cleanSession=0
+        if (!connectMessage.isCleanSession()) {
+            //force the republish of stored QoS1 and QoS2
+//            republishStoredInSession(msg.getClientID());
+        }
 	}
 }

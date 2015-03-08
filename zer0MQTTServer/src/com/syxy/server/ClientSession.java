@@ -4,7 +4,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import com.syxy.Aiohandler.AioReadHandler;
@@ -41,6 +43,7 @@ public class ClientSession {
 	private Object index;// 客户端在索引
 	
 	private Message msg;//协议对象
+	private Map<Object, Object> attributesKeys = new HashMap<Object, Object>();//存放一些客户端需要的属性
 	
 	public ClientSession(AsynchronousSocketChannel socketChannel, 
 			AioReadHandler readHandler, 
@@ -298,5 +301,12 @@ public class ClientSession {
 		this.socketChannel = socketChannel;
 	}
 	
+	public Object getAttributesKeys(Object key) {
+		return attributesKeys.get(key);
+	}
+
+	public void setAttributesKeys(Object key, Object value) {
+		attributesKeys.put(key, value);
+	}
 	
 }

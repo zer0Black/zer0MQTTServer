@@ -7,5 +7,7 @@ package com.syxy.util;
  */
 
 public class Constant {
-
+    public static final String CLIENT_ID = "ClientID";
+    public static final String CLEAN_SESSION = "cleanSession";
+    public static final String KEEP_ALIVE = "keepAlive";
 }
