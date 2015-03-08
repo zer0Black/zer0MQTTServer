@@ -58,7 +58,22 @@ public class protocolProcess {
 	
 	private ConcurrentHashMap<Object, ConnectionDescriptor> clients = new ConcurrentHashMap<Object, ConnectionDescriptor>();// 客户端链接映射表
     //存储遗嘱信息，通过ID映射遗嘱信息
-	private Map<String, WillMessage> willStore = new HashMap<>();
+	private ConcurrentHashMap<String, WillMessage> willStore = new ConcurrentHashMap<>();
+	
+	private IAuthenticator authenticator;
+	
+	/**
+	 * <li>方法名 init
+	 * <li>@param authenticator 该参数用于做权限管理
+	 * <li>返回类型 void
+	 * <li>说明 初始化处理程序
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-3-8
+	 */
+	void init(IAuthenticator authenticator){
+		this.authenticator = authenticator;
+	}
+	
 	/**
 	 * <li>方法名 processConnect
 	 * <li>@param client
@@ -121,6 +136,10 @@ public class protocolProcess {
 				 pwd = connectMessage.getPassword();
 			}
 			//此处对用户名和密码做验证
+			if (!authenticator.checkValid(userName, pwd)) {
+				ConnAckMessage badAckMessage = new ConnAckMessage(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, 0);
+				client.writeMsgToReqClient(badAckMessage);
+			}
 		}
 		//处理cleanSession为1的情况
         if (connectMessage.isCleanSession()) {

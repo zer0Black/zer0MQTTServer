@@ -11,9 +11,9 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
-import com.syxy.protocol.CoderHandler;
-import com.syxy.protocol.DecoderHandler;
-import com.syxy.protocol.ProcessHandler;
+import com.syxy.protocol.ICoderHandler;
+import com.syxy.protocol.IDecoderHandler;
+import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.util.BufferPool;
 
@@ -28,9 +28,9 @@ public class ClientSession {
 	private final static Logger Log = Logger.getLogger(ClientSession.class);
 	
 	// 定义编码处理器，业务处理器，解码处理器
-	private CoderHandler coderHandler;// 编码处理器
-	private DecoderHandler decoderHandler;// 解码处理器
-	private ProcessHandler processHandler;// 业务处理器
+	private ICoderHandler coderHandler;// 编码处理器
+	private IDecoderHandler decoderHandler;// 解码处理器
+	private IProcessHandler processHandler;// 业务处理器
 	
 	private TcpServer socketServer;
 	private AsynchronousSocketChannel socketChannel;// 异步socket连结端
@@ -66,7 +66,7 @@ public class ClientSession {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-2-20
 	 */
-	public void registeHandler(CoderHandler coderHandler, DecoderHandler decoderHandler, ProcessHandler processHandler){
+	public void registeHandler(ICoderHandler coderHandler, IDecoderHandler decoderHandler, IProcessHandler processHandler){
 		this.coderHandler = coderHandler;
 		this.decoderHandler = decoderHandler;
 		this.processHandler = processHandler;

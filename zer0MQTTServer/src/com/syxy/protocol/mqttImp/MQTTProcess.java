@@ -1,6 +1,6 @@
 package com.syxy.protocol.mqttImp;
 
-import com.syxy.protocol.ProcessHandler;
+import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
@@ -15,7 +15,7 @@ import com.syxy.server.ClientSession;
  * <li>创建日期 2015-2-16
  */
 
-public class MQTTProcess implements ProcessHandler {
+public class MQTTProcess implements IProcessHandler {
 
 	private protocolProcess protocolProcess = new protocolProcess();
 	

@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import com.syxy.protocol.DecoderHandler;
+import com.syxy.protocol.IDecoderHandler;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
@@ -21,7 +21,7 @@ import com.syxy.util.coderTool;
  * <li>创建日期 2015-2-16
  */
 
-public class MQTTDecoder implements DecoderHandler {
+public class MQTTDecoder implements IDecoderHandler {
 	
 	private final static Logger Log = Logger.getLogger(MQTTDecoder.class);
 

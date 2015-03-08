@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.log4j.Logger;
 
-import com.syxy.protocol.CoderHandler;
+import com.syxy.protocol.ICoderHandler;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
@@ -21,7 +21,7 @@ import com.syxy.util.coderTool;
  * <li>创建日期 2015-2-16
  */
 
-public class MQTTCoder implements CoderHandler {
+public class MQTTCoder implements ICoderHandler {
 	
 	private final static Logger Log = Logger.getLogger(MQTTCoder.class);
 	//定死回写的缓冲区为2m，以后再修改

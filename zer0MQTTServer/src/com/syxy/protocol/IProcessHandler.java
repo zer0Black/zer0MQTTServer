@@ -9,7 +9,7 @@ import com.syxy.server.ClientSession;
  * <li>创建日期 2015-2-16
  */
 
-public interface ProcessHandler {
+public interface IProcessHandler {
 
 	/**
 	 * <li>方法名 process

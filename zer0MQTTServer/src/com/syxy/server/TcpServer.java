@@ -12,9 +12,9 @@ import org.apache.log4j.Logger;
 import com.syxy.Aiohandler.AioAcceptHandler;
 import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
-import com.syxy.protocol.CoderHandler;
-import com.syxy.protocol.DecoderHandler;
-import com.syxy.protocol.ProcessHandler;
+import com.syxy.protocol.ICoderHandler;
+import com.syxy.protocol.IDecoderHandler;
+import com.syxy.protocol.IProcessHandler;
 import com.syxy.util.PropertiesTool;
 
 /**
@@ -42,9 +42,9 @@ public class TcpServer {
 	private int sockectReceiveBufferSize = 5;// 默认为5k
 	
 	// 定义编码处理器，业务处理器，解码处理器
-	private CoderHandler coderHandler;// 编码处理器
-	private DecoderHandler decoderHandler;// 解码处理器
-	private ProcessHandler processHandler;// 业务处理器
+	private ICoderHandler coderHandler;// 编码处理器
+	private IDecoderHandler decoderHandler;// 解码处理器
+	private IProcessHandler processHandler;// 业务处理器
 	
 	ReadHandlerThread readHandlerThread;
 	
@@ -55,7 +55,7 @@ public class TcpServer {
 	
 	private final AtomicInteger keyIndex = new AtomicInteger();// 连接序号,用于标示客户端的编号
 	
-	public TcpServer(CoderHandler coderHandler, DecoderHandler decoderHandler, ProcessHandler processHandler){
+	public TcpServer(ICoderHandler coderHandler, IDecoderHandler decoderHandler, IProcessHandler processHandler){
 		// 设置端口
 		this.port = PropertiesTool.getPropertyToInt(PORT);// 从配置中获取端口号
 		if(this.port == null){
