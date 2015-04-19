@@ -10,14 +10,14 @@ import java.util.LinkedList;
  * <li>作者 zer0
  * <li>创建日期 2015-4-11
  */
-public class subscribe {
+public class subscription {
 	QoS requestedQos; //max QoS acceptable
     String topicFilter;
     LinkedList<String> clientIDs;
     boolean cleanSession;
     boolean active = true;
     
-    public subscribe(LinkedList<String> clientIDs, String topicFilter, QoS requestedQos, boolean cleanSession) {
+    public subscription(LinkedList<String> clientIDs, String topicFilter, QoS requestedQos, boolean cleanSession) {
     	this.clientIDs = clientIDs;
         this.requestedQos = requestedQos;
         this.topicFilter = topicFilter;

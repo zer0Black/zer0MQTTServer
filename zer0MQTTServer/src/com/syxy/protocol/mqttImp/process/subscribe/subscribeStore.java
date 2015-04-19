@@ -16,8 +16,8 @@ public class subscribeStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-4-12
 	 */
-	public subscribe getSubscribeFromTopic(String topic){
-		
-	}
+//	public subscribe getSubscribeFromTopic(String topic){
+//		
+//	}
 	
 }
