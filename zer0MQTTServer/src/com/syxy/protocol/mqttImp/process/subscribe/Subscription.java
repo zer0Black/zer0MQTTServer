@@ -11,28 +11,22 @@ import com.syxy.protocol.mqttImp.QoS;
  * <li>作者 zer0
  * <li>创建日期 2015-4-11
  */
-public class subscriptionTreeNode{
+public class Subscription{
+	
 	QoS requestedQos; //max QoS acceptable
     String topicFilter;
-    LinkedList<String> clientIDs;
-    ArrayList<subscriptionTreeNode> childrens;
+    String clientID;
     boolean cleanSession;
     boolean active = true;
     
-    public subscriptionTreeNode(LinkedList<String> clientIDs, String topicFilter, QoS requestedQos, boolean cleanSession) {
-    	this.clientIDs = clientIDs;
+    public Subscription(String clientID, String topicFilter, QoS requestedQos, boolean cleanSession) {
+    	this.clientID = clientID;
         this.requestedQos = requestedQos;
         this.topicFilter = topicFilter;
         this.cleanSession = cleanSession;
-        initChildrens();
     }
     
-    public void initChildrens(){
-    	if (childrens == null) {
-			childrens = new ArrayList<subscriptionTreeNode>();
-		}
-    }
-	public QoS getRequestedQos() {
+    public QoS getRequestedQos() {
 		return requestedQos;
 	}
 
@@ -47,15 +41,7 @@ public class subscriptionTreeNode{
 	public void setTopicFilter(String topicFilter) {
 		this.topicFilter = topicFilter;
 	}
-
-	public LinkedList<String> getClientIDs() {
-		return clientIDs;
-	}
-
-	public void setClientIDs(LinkedList<String> clientIDs) {
-		this.clientIDs = clientIDs;
-	}
-
+ 
 	public boolean isCleanSession() {
 		return cleanSession;
 	}
@@ -72,12 +58,12 @@ public class subscriptionTreeNode{
 		this.active = active;
 	}
 
-	public ArrayList<subscriptionTreeNode> getChildrens() {
-		return childrens;
+	public void setClientID(String clientID) {
+		this.clientID = clientID;
 	}
 
-	public void setChildrens(ArrayList<subscriptionTreeNode> childrens) {
-		this.childrens = childrens;
+	public String getClientID() {
+		return clientID;
 	}
-    
+ 
 }
