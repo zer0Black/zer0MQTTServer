@@ -19,6 +19,14 @@ public class TreeNode {
     	this.parent = parent;
 	}
     
+    /**
+	 * <li>方法名 addSubscription
+	 * <li>@param subscription
+	 * <li>返回类型 {@link void}
+	 * <li>说明  添加新的clientID，clientID包含在subscription中，要注意避免重复添加和qos不一致但存在的情况
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-4-28
+     */
     void addSubscription(Subscription subscription){
     	//避免同样的订阅添加进来
     	if (subscriptions.contains(subscription)) {
@@ -34,4 +42,43 @@ public class TreeNode {
     	
     	subscriptions.add(subscription);
     }
+    
+    
+    /**
+	 * <li>方法名 addChild
+	 * <li>@param child
+	 * <li>返回类型 {@link void}
+	 * <li>说明  添加子节点
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-4-28
+     */
+    void addChild(TreeNode child){
+    	children.add(child);
+    }
+    
+     /**
+	 * <li>方法名 childWithToken
+	 * <li>@param token
+	 * <li>返回类型 {@link TreeNode}
+	 * <li>说明  查询该节点的子节点是否包含了某个token，包含了就返回节点，不包含则返回null
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-4-28
+     */
+    TreeNode childWithToken(Token token) {
+        for (TreeNode child : children) {
+            if (child.getToken().equals(token)) {
+                return child;
+            }
+        }
+        return null;
+    }
+
+	public Token getToken() {
+		return token;
+	}
+
+	public void setToken(Token token) {
+		this.token = token;
+	}
+    
 }
