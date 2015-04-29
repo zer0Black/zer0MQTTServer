@@ -72,6 +72,23 @@ public class TreeNode {
         }
         return null;
     }
+    
+    /**
+  	 * <li>方法名 getAllDescendant
+  	 * <li>返回类型 {@link List<TreeNode>}
+  	 * <li>说明  返回此节点下的所有子孙节点
+  	 * <li>作者 zer0
+  	 * <li>创建日期 2015-4-29
+       */
+    List<TreeNode> getAllDescendant() {
+        List<TreeNode> treeNodes = new ArrayList<TreeNode>();
+        if (this.children.size() > 0) {
+       	    for (TreeNode t : children) {
+       		    treeNodes.addAll(t.getAllDescendant());	
+       	    }    
+        }
+        return treeNodes;
+    }
 
 	public Token getToken() {
 		return token;
