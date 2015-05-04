@@ -2,6 +2,8 @@ package com.syxy.protocol.mqttImp.process.subscribe;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * <li>说明 订阅树的节点，包含父节点、代表节点的token、子节点列表和该节点包含的客户端ID，此部分参考moquette
@@ -79,7 +81,7 @@ public class TreeNode {
   	 * <li>说明  返回此节点下的所有子孙节点
   	 * <li>作者 zer0
   	 * <li>创建日期 2015-4-29
-       */
+     */
     List<TreeNode> getAllDescendant() {
         List<TreeNode> treeNodes = new ArrayList<TreeNode>();
         if (this.children.size() > 0) {
@@ -90,6 +92,56 @@ public class TreeNode {
         return treeNodes;
     }
 
+    /**
+  	 * <li>方法名 getSubscription
+  	 * <li>param tokens
+  	 * <li>param matchingSubs
+  	 * <li>返回类型 {@link void}
+  	 * <li>说明  返回此节点下的所有子孙节点
+  	 * <li>作者 zer0
+  	 * <li>创建日期 2015-5-04
+     */
+    void getSubscription(Queue<Token> tokens, List<Subscription> matchingSubs){
+    	Token t = tokens.poll();
+    	//如果t为null，正面已经取到最后一个token，这时候就直接取出该节点的客户端列表
+    	if (t == null) {
+			matchingSubs.addAll(subscriptions);
+			return;
+		}
+    	
+    	for (TreeNode n : children) {
+    		if (n.getToken().name == t.name) {
+				n.getSubscription(new LinkedBlockingDeque<Token>(tokens), matchingSubs);
+			}			
+		}
+    }
+    
+    /**
+  	 * <li>方法名 removeClientSubscription
+  	 * <li>param clientID
+  	 * <li>返回类型 {@link void}
+  	 * <li>说明  移除该节点以及其所有子节点中包含的此clientID
+  	 * <li>作者 zer0
+  	 * <li>创建日期 2015-5-04
+     */
+    void removeClientSubscription(String clientID){
+    	List<Subscription> subsToRemove = new ArrayList<Subscription>();
+    	for (Subscription s : subscriptions) {
+			if (s.clientID.equals(clientID)) {
+				subsToRemove.add(s);
+			}
+		}
+    	
+    	for (Subscription s : subsToRemove) {
+			subscriptions.remove(s);
+		}
+    	
+    	//遍历
+    	for (TreeNode child : children) {
+			child.removeClientSubscription(clientID);
+		}
+    }
+    
 	public Token getToken() {
 		return token;
 	}

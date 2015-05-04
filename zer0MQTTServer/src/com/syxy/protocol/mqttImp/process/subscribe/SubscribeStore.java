@@ -2,8 +2,12 @@ package com.syxy.protocol.mqttImp.process.subscribe;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
- 
+import java.util.Queue;
+import java.util.concurrent.LinkedBlockingDeque;
+
 /**
  * <li>说明 订阅存储类,存储订阅的topic,即订阅树
  * <li>作者 zer0
@@ -86,6 +90,40 @@ public class SubscribeStore {
 		}
 		return childList;
 	}
+	
+	
+    /**
+	 * <li>方法名 getClientListFromTopic
+	 * <li>@param topic
+	 * <li>返回类型List<Subscription
+	 * <li>说明 解析topic,从topic获取到对应的客户端ID群
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-04 
+     */
+	public List<Subscription> getClientListFromTopic(String topic) {
+		List<Token> tokens;
+		try {
+			tokens = parseTopic(topic);
+		} catch (ParseException e) {
+			return Collections.EMPTY_LIST;
+		}
+		Queue<Token> tokenQueue = new LinkedBlockingDeque<Token>(tokens);
+		List<Subscription> matchingSubs = new ArrayList<Subscription>();
+		root.getSubscription(tokenQueue, matchingSubs);
+		return matchingSubs;
+	}
+	
+	   /**
+	  	 * <li>方法名 removeForClient
+	  	 * <li>param clientID
+	  	 * <li>返回类型 {@link void}
+	  	 * <li>说明  把某个clientID从订阅树里移走
+	  	 * <li>作者 zer0
+	  	 * <li>创建日期 2015-5-04
+	     */
+	    public void removeForClient(String clientID) {
+	    	root.removeClientSubscription(clientID);
+		}
 	
     /**
 	 * <li>方法名 parseTopic
