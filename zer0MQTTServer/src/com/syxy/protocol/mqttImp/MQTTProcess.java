@@ -6,7 +6,7 @@ import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
-import com.syxy.protocol.mqttImp.process.protocolProcess;
+import com.syxy.protocol.mqttImp.process.ProtocolProcess;
 import com.syxy.server.ClientSession;
 
 /**
@@ -17,7 +17,7 @@ import com.syxy.server.ClientSession;
 
 public class MQTTProcess implements IProcessHandler {
 
-	private protocolProcess protocolProcess = new protocolProcess();
+	private ProtocolProcess protocolProcess = new ProtocolProcess();
 	
 	@Override
 	public void process(Message msg, ClientSession client) {

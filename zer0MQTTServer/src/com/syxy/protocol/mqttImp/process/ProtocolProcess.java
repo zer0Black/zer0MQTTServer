@@ -24,7 +24,7 @@ import com.syxy.util.StringTool;
  * <li>作者 zer0
  * <li>创建日期 2015-2-16
  */
-public class protocolProcess {
+public class ProtocolProcess {
 
 	//遗嘱信息类
 	static final class WillMessage {
@@ -58,7 +58,7 @@ public class protocolProcess {
         
     }
 	
-	private final static Logger Log = Logger.getLogger(protocolProcess.class);
+	private final static Logger Log = Logger.getLogger(ProtocolProcess.class);
 	
 	private ConcurrentHashMap<Object, ConnectionDescriptor> clients = new ConcurrentHashMap<Object, ConnectionDescriptor>();// 客户端链接映射表
     //存储遗嘱信息，通过ID映射遗嘱信息
@@ -186,5 +186,19 @@ public class protocolProcess {
 	private void cleanSession(String clientID) {
 		subscribeStore.removeForClient(clientID);
 		//TODO 未从会话存储中删除信息
+	}
+	
+	/**
+	 * <li>方法名 republishMessage
+	 * <li>@param clientID
+	 * <li>返回类型 void
+	 * <li>说明 在客户端重连以后，重发存储的离线消息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-11
+	 */
+	private void republishMessage(String clientID){
+		//取出需要重发的消息列表
+		//查看消息列表是否为空，为空则返回
+		//不为空则依次发送消息并从会话中删除此消息
 	}
 }
