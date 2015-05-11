@@ -11,6 +11,10 @@ import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
+import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
+import com.syxy.protocol.mqttImp.process.Impl.ISessionStore;
+import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
 import com.syxy.util.StringTool;
@@ -61,6 +65,9 @@ public class protocolProcess {
 	private ConcurrentHashMap<String, WillMessage> willStore = new ConcurrentHashMap<>();
 	
 	private IAuthenticator authenticator;
+	private IMessagesStore messagesStore;
+	private ISessionStore sessionStore;
+	private SubscribeStore subscribeStore;
 	
 	/**
 	 * <li>方法名 init
@@ -141,15 +148,18 @@ public class protocolProcess {
 				client.writeMsgToReqClient(badAckMessage);
 			}
 		}
+		
 		//处理cleanSession为1的情况
         if (connectMessage.isCleanSession()) {
             //移除所有之前的session并开启一个新的，并且原先保存的subscribe之类的都得从服务器删掉
-//            cleanSession(connectMessage.getClientID());
+            cleanSession(connectMessage.getClientId());
         }
+        
         //处理回写的CONNACK,并回写，协议P29
         ConnAckMessage okResp = new ConnAckMessage();
         okResp.setStatus(ConnAckMessage.ConnectionStatus.ACCEPTED);
-        if (!connectMessage.isCleanSession()/* && sessionsStore.contains(msg.getClientID()*/) {
+        //协议32,session present的处理
+        if (!connectMessage.isCleanSession() && sessionStore.contains(connectMessage.getClientId())) {
         	okResp.setSessionPresent(1);
 		}else{
 			okResp.setSessionPresent(0);
@@ -157,10 +167,24 @@ public class protocolProcess {
         client.writeMsgToReqClient(okResp);
         Log.info("CONNACK处理完毕并成功发送");
         Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
-        //如果cleanSession=0
+        
+        //如果cleanSession=0,需要在重连的时候重发同一clientID存储在服务端的离线信息
         if (!connectMessage.isCleanSession()) {
             //force the republish of stored QoS1 and QoS2
 //            republishStoredInSession(msg.getClientID());
         }
+	}
+	
+	/**
+	 * <li>方法名 cleanSession
+	 * <li>@param clientID
+	 * <li>返回类型 void
+	 * <li>说明 清除会话，除了要从订阅树中删掉会话信息，还要从会话存储中删除会话信息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-07
+	 */
+	private void cleanSession(String clientID) {
+		subscribeStore.removeForClient(clientID);
+		//TODO 未从会话存储中删除信息
 	}
 }

@@ -1,9 +1,9 @@
-package com.syxy.protocol.mqttImp.process;
+package com.syxy.protocol.mqttImp.process.Impl;
 
 import java.io.IOException;
 
 /**
- * <li>说明 身份验证类
+ * <li>说明 身份验证接口
  * <li>作者 zer0
  * <li>创建日期 2015-3-8
  */
