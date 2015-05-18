@@ -2,6 +2,7 @@ package com.syxy.protocol.mqttImp.process;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,9 +12,11 @@ import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Impl.ISessionStore;
+import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
@@ -118,7 +121,7 @@ public class ProtocolProcess {
 		this.clients.put(connectMessage.getClientId(), connectionDescriptor);
 		//处理心跳包时间，把心跳包时长和一些其他属性都添加到会话中，方便以后使用
 		int keepAlive = connectMessage.getKeepAlive();
-		Log.debug("Connect with keepAlive {" + keepAlive + "} s");
+		Log.debug("连接的心跳包时长是 {" + keepAlive + "} s");
 		client.setAttributesKeys(Constant.CLIENT_ID, connectMessage.getClientId());//clientID属性用于subscribe和publish的处理
 		client.setAttributesKeys(Constant.CLEAN_SESSION, connectMessage.isCleanSession());
 		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive);
@@ -171,8 +174,21 @@ public class ProtocolProcess {
         //如果cleanSession=0,需要在重连的时候重发同一clientID存储在服务端的离线信息
         if (!connectMessage.isCleanSession()) {
             //force the republish of stored QoS1 and QoS2
-//            republishStoredInSession(msg.getClientID());
+        	republishMessage(connectMessage.getClientId());
         }
+	}
+	
+	/**
+	 * <li>方法名 processPublic
+	 * <li>@param client
+	 * <li>@param publishMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的publish消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-18
+	 */
+	public void processPublic(ClientSession client, PublishMessage publishMessage){
+		
 	}
 	
 	/**
@@ -192,13 +208,24 @@ public class ProtocolProcess {
 	 * <li>方法名 republishMessage
 	 * <li>@param clientID
 	 * <li>返回类型 void
-	 * <li>说明 在客户端重连以后，重发存储的离线消息
+	 * <li>说明 在客户端重连以后，针对QoS1和Qos2的消息，重发存储的离线消息
 	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-11
+	 * <li>创建日期 2015-05-18
 	 */
 	private void republishMessage(String clientID){
 		//取出需要重发的消息列表
 		//查看消息列表是否为空，为空则返回
 		//不为空则依次发送消息并从会话中删除此消息
+		List<PublishEvent> publishedEvents = messagesStore.listMessagesInSession(clientID);
+		if (publishedEvents.isEmpty()) {
+			Log.info("没有客户端{"+clientID+"}存储的离线消息");
+			return;
+		}
+		
+		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
+		for (PublishEvent pubEvent : publishedEvents) {
+//			sendPublish();
+			messagesStore.removeMessageInSession(clientID, pubEvent.getPackgeID());
+		}
 	}
 }
