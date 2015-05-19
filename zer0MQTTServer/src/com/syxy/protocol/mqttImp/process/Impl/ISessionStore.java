@@ -17,4 +17,13 @@ public interface ISessionStore {
 	 */
 	boolean contains(String clientID);
 	
+	/**
+	 * <li>方法名 wipeSubscriptions
+	 * <li>@param clientID
+	 * <li>返回参数 void
+	 * <li>说明 清理某个ID所有订阅信息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-19
+	 */
+	void wipeSubscriptions(String clientID);
 }

@@ -1,9 +1,7 @@
 package com.syxy.protocol.mqttImp.process;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
@@ -18,6 +16,7 @@ import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Impl.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
+import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
 import com.syxy.util.StringTool;
@@ -183,12 +182,67 @@ public class ProtocolProcess {
 	 * <li>@param client
 	 * <li>@param publishMessage
 	 * <li>返回类型 void
-	 * <li>说明 处理协议的publish消息类型
+	 * <li>说明 处理协议的publish消息类型,该方法先把public需要的事件提取出来
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-18
 	 */
 	public void processPublic(ClientSession client, PublishMessage publishMessage){
+		Log.info("处理publish的数据");
+		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		final String topic = publishMessage.getTopic();
+	    final QoS qos = publishMessage.getQos();
+	    final byte[] message = publishMessage.getData();
+	    boolean retain = publishMessage.isRetain();
+	    final int packageID = publishMessage.getPackgeID();
+	    
+	    processPublic(clientID, topic, qos, message, retain, packageID);
+	}
+	
+	/**
+	 * <li>方法名 processPublic
+	 * <li>@param client
+	 * <li>@param topic
+	 * <li>@param qos
+	 * <li>@param message
+	 * <li>@param retain
+	 * <li>@param PackgeID
+	 * <li>返回类型 void
+	 * <li>说明 根据协议进行具体的处理，处理不同的Qos等级下的public事件
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-19
+	 */
+	private void processPublic(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packageID){
+		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packageID+"}");
 		
+		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
+		if (qos == QoS.AT_MOST_ONCE) {
+			sendPulicMessage(clientID, topic, qos, message, retain, packageID);
+		}
+	}
+	
+		/**
+	 * <li>方法名 sendPulicMessage
+	 * <li>@param client
+	 * <li>@param topic
+	 * <li>@param qos
+	 * <li>@param message
+	 * <li>@param retain
+	 * <li>@param PackgeID
+	 * <li>返回类型 void
+	 * <li>说明 取出所有匹配topic的客户端换，然后发送public消息给客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-19
+	 */
+	private void sendPulicMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packageID){
+		Log.info("发送pulicMessage给客户端");
+		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
+			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
+			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {
+				qos = sub.getRequestedQos(); 
+			}
+			
+			ByteBuffer byteBuffer = ByteBuffer.wrap(message);
+		}
 	}
 	
 	/**
@@ -201,7 +255,8 @@ public class ProtocolProcess {
 	 */
 	private void cleanSession(String clientID) {
 		subscribeStore.removeForClient(clientID);
-		//TODO 未从会话存储中删除信息
+		//从会话存储中删除信息
+		sessionStore.wipeSubscriptions(clientID);
 	}
 	
 	/**

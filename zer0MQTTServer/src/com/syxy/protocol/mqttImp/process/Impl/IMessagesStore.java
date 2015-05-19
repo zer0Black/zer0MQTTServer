@@ -31,4 +31,6 @@ public interface IMessagesStore {
 	 * <li>创建日期 2015-05-18
 	 */
 	void removeMessageInSession(String clientID, int packgeID);
+	
+
 }

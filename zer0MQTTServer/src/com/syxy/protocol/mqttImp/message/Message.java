@@ -202,13 +202,13 @@ public abstract class Message {
 		this.headerMessage.qos = qos;
 	}
 //
-//	public boolean isRetain() {
-//		return headerMessage.retain;
-//	}
-//
-//	public void setRetain(boolean retain) {
-//		this.headerMessage.retain = retain;
-//	}
+	public boolean isRetain() {
+		return headerMessage.retain;
+	}
+
+	public void setRetain(boolean retain) {
+		this.headerMessage.retain = retain;
+	}
 	
 	
 	
