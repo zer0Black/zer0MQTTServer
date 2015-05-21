@@ -217,20 +217,22 @@ public class ProtocolProcess {
 		
 		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
-			sendPulicMessage(topic, qos, message, retain, packageID);
+			sendPulishMessage(topic, qos, message, retain, packageID);
 		}
 		
-		//根据协议P53，publish的接受者需要发送该publish消息给其他客户端，然后发送pubAck给该客户端。
-		//发送该publish消息时候，按此流程： 存储消息→发送→等待pubAck到来→删除消息
+		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
+		//发送该publish消息时候，按此流程： 存储消息→发送给所有人→等待pubAck到来→删除消息
 		if (qos == QoS.AT_LEAST_ONCE) {
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packageID);
 			messagesStore.storeMessageToSessionForPublish(storePubEvent);
-			sendPulicMessage(topic, qos, message, retain, packageID);
+			sendPulishMessage(topic, qos, message, retain, packageID);
 			sendPubAck(clientID, packageID);
 		}
 		
-		//
+		//根据协议P54，P55
+		//接收端：publish接收消息→存储包ID→发给其他客户端→发回pubRec→收到pubRel→抛弃第二步存储的包ID→发回pubcomp
+		//发送端：存储消息→发送publish(Qos=2,Dup=0)→收到pubRec→抛弃第一步存储的消息→存储pubRec的包ID→发送pubRel→收到pubcomp→抛弃pubRec包ID的存储
 		if (qos == QoS.EXACTLY_ONCE) {
 			
 		}
@@ -248,15 +250,13 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void sendPulicMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+	private void sendPulishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
 		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
 			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {
 				qos = sub.getRequestedQos(); 
 			}
-//			ByteBuffer byteBuffer = ByteBuffer.wrap(message);
-			
 			String clientID = sub.getClientID();
 			
 			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
