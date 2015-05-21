@@ -22,15 +22,23 @@ public interface IMessagesStore {
 	List<PublishEvent> listMessagesInSession(String clientID);
 	
 	/**
-	 * <li>方法名 removeMessageInSession
-	 * <li>@param clientID
-	 * <li>@param messageID
+	 * <li>方法名 removeMessageInSessionForPublish
+	 * <li>@param pubEvent
 	 * <li>返回参数 void
-	 * <li>说明 移除某个clientID的离线消息
+	 * <li>说明 移除某个publish事件的离线消息，与storeMessageToSessionForPublish对应
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-18
 	 */
-	void removeMessageInSession(String clientID, int packgeID);
+	void removeMessageInSessionForPublish(PublishEvent pubEvent);
 	
+	/**
+	 * <li>方法名 storeMessageToSessionForPublish
+	 * <li>@param pubEvent
+	 * <li>返回参数 void
+	 * <li>说明 存储publish消息事件，为以后重发做准备,与removeMessageInSessionForPublish对应
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-21
+	 */
+	void storeMessageToSessionForPublish(PublishEvent pubEvent);
 
 }

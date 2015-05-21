@@ -10,6 +10,7 @@ import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
@@ -193,9 +194,9 @@ public class ProtocolProcess {
 	    final QoS qos = publishMessage.getQos();
 	    final byte[] message = publishMessage.getData();
 	    boolean retain = publishMessage.isRetain();
-	    final int packageID = publishMessage.getPackgeID();
+	    final int packgeID = publishMessage.getPackgeID();
 	    
-	    processPublic(clientID, topic, qos, message, retain, packageID);
+	    processPublic(clientID, topic, qos, message, retain, packgeID);
 	}
 	
 	/**
@@ -216,34 +217,110 @@ public class ProtocolProcess {
 		
 		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
-			sendPulicMessage(clientID, topic, qos, message, retain, packageID);
+			sendPulicMessage(topic, qos, message, retain, packageID);
+		}
+		
+		//根据协议P53，publish的接受者需要发送该publish消息给其他客户端，然后发送pubAck给该客户端。
+		//发送该publish消息时候，按此流程： 存储消息→发送→等待pubAck到来→删除消息
+		if (qos == QoS.AT_LEAST_ONCE) {
+			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
+                    clientID, packageID);
+			messagesStore.storeMessageToSessionForPublish(storePubEvent);
+			sendPulicMessage(topic, qos, message, retain, packageID);
+			sendPubAck(clientID, packageID);
+		}
+		
+		//
+		if (qos == QoS.EXACTLY_ONCE) {
+			
 		}
 	}
 	
-		/**
+	/**
 	 * <li>方法名 sendPulicMessage
-	 * <li>@param client
 	 * <li>@param topic
 	 * <li>@param qos
 	 * <li>@param message
 	 * <li>@param retain
 	 * <li>@param PackgeID
 	 * <li>返回类型 void
-	 * <li>说明 取出所有匹配topic的客户端换，然后发送public消息给客户端
+	 * <li>说明 取出所有匹配topic的客户端，然后发送public消息给客户端
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void sendPulicMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packageID){
+	private void sendPulicMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
 		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
 			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {
 				qos = sub.getRequestedQos(); 
 			}
+//			ByteBuffer byteBuffer = ByteBuffer.wrap(message);
 			
-			ByteBuffer byteBuffer = ByteBuffer.wrap(message);
+			String clientID = sub.getClientID();
+			
+			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
+			
+			PublishMessage publishMessage = new PublishMessage();
+			publishMessage.setRetain(retain);
+			publishMessage.setTopic(topic);
+			publishMessage.setQos(qos);
+			publishMessage.setData(message);
+			
+			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
+				publishMessage.setPackgeID(packgeID);
+			}
+			
+			if (clients == null) {
+				throw new RuntimeException("内部错误，clients为null");
+			} else {
+				Log.debug("clients为{"+clients+"}");
+			}
+			
+			if (clients.get(clientID) == null) {
+				throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+			} else {
+				Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+			}
+			
+			//从会话列表中取出会话，然后通过此会话发送publish消息
+			clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
 		}
 	}
+	
+	/**
+	 * <li>方法名 sendPubAck
+	 * <li>@param clientID
+	 * <li>@param packgeID
+	 * <li>返回类型 void
+	 * <li>说明 回写PubAck消息给发来publish的客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-21
+	 */
+	private void sendPubAck(String clientID, Integer packgeID) {
+	        Log.trace("发送PubAck消息给客户端");
+
+	        PubAckMessage pubAckMessage = new PubAckMessage();
+	        pubAckMessage.setPackgeID(packgeID);
+	        
+	        try {
+	        	if (clients == null) {
+					throw new RuntimeException("内部错误，clients为null");
+				} else {
+					Log.debug("clients为{"+clients+"}");
+				}
+	        	
+	        	if (clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+				} else {
+					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+				}	            
+	        	
+				clients.get(clientID).getClient().writeMsgToReqClient(pubAckMessage);
+	        }catch(Throwable t) {
+	            Log.error(null, t);
+	        }
+	    }
 	
 	/**
 	 * <li>方法名 cleanSession
@@ -279,8 +356,7 @@ public class ProtocolProcess {
 		
 		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
 		for (PublishEvent pubEvent : publishedEvents) {
-//			sendPublish();
-			messagesStore.removeMessageInSession(clientID, pubEvent.getPackgeID());
+			messagesStore.removeMessageInSessionForPublish(pubEvent);
 		}
 	}
 }

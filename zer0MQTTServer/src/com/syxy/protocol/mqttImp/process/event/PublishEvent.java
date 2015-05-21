@@ -11,12 +11,13 @@ import com.syxy.protocol.mqttImp.QoS;
 public class PublishEvent {
 	String topic;
 	QoS qos;
-	ByteBuffer message;
+	byte[] message;
 	boolean retain;
 	String clientID;
+	//针对Qos1和Qos2
 	int packgeID;
 	
-	public PublishEvent(String topic, QoS qos, ByteBuffer message, boolean retain, String clientID, Integer pkgID){
+	public PublishEvent(String topic, QoS qos, byte[] message, boolean retain, String clientID, Integer pkgID){
 		this.topic = topic;
 		this.qos = qos;
 		this.message = message;
@@ -43,11 +44,11 @@ public class PublishEvent {
 		this.qos = qos;
 	}
 
-	public ByteBuffer getMessage() {
+	public byte[] getMessage() {
 		return message;
 	}
 
-	public void setMessage(ByteBuffer message) {
+	public void setMessage(byte[] message) {
 		this.message = message;
 	}
 
