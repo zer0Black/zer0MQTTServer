@@ -11,6 +11,7 @@ import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
+import com.syxy.protocol.mqttImp.message.PubRecMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
@@ -212,30 +213,51 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void processPublic(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packageID){
-		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packageID+"}");
+	private void processPublic(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
 		
 		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
-			sendPulishMessage(topic, qos, message, retain, packageID);
+			sendPublishMessage(topic, qos, message, retain, packgeID);
 		}
 		
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
 		//发送该publish消息时候，按此流程： 存储消息→发送给所有人→等待pubAck到来→删除消息
 		if (qos == QoS.AT_LEAST_ONCE) {
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
-                    clientID, packageID);
+                    clientID, packgeID);
 			messagesStore.storeMessageToSessionForPublish(storePubEvent);
-			sendPulishMessage(topic, qos, message, retain, packageID);
-			sendPubAck(clientID, packageID);
+			sendPublishMessage(topic, qos, message, retain, packgeID);
+			sendPubAck(clientID, packgeID);
 		}
 		
 		//根据协议P54，P55
 		//接收端：publish接收消息→存储包ID→发给其他客户端→发回pubRec→收到pubRel→抛弃第二步存储的包ID→发回pubcomp
 		//发送端：存储消息→发送publish(Qos=2,Dup=0)→收到pubRec→抛弃第一步存储的消息→存储pubRec的包ID→发送pubRel→收到pubcomp→抛弃pubRec包ID的存储
 		if (qos == QoS.EXACTLY_ONCE) {
+			messagesStore.storePackgeID(clientID, packgeID);
 			
+			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
+			messagesStore.storeTempMessageForPublish(pubEvent);
+			sendPublishMessage(topic, qos, message, retain, packgeID);
+			
+			sendPubRec(clientID, packgeID);
 		}
+	}
+	
+	/**
+	 * <li>方法名 processPubAck
+	 * <li>@param client
+	 * <li>@param pubAckMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的pubAck消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-21
+	 */
+	void processPubAck(ClientSession client, PubAckMessage pubAckMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 int packgeID = pubAckMessage.getPackgeID();
+		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
 	}
 	
 	/**
@@ -250,7 +272,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void sendPulishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
 		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
@@ -289,6 +311,47 @@ public class ProtocolProcess {
 	}
 	
 	/**
+	 * <li>方法名 sendPulicMessage
+	 * <li>@param topic
+	 * <li>@param qos
+	 * <li>@param message
+	 * <li>@param retain
+	 * <li>@param PackgeID
+	 * <li>返回类型 void
+	 * <li>说明 发送publish消息给指定客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-19
+	 */
+	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+		Log.info("发送pulicMessage给指定客户端");
+			
+		PublishMessage publishMessage = new PublishMessage();
+		publishMessage.setRetain(retain);
+		publishMessage.setTopic(topic);
+		publishMessage.setQos(qos);
+		publishMessage.setData(message);
+		
+		if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
+			publishMessage.setPackgeID(packgeID);
+		}
+		
+		if (clients == null) {
+			throw new RuntimeException("内部错误，clients为null");
+		} else {
+			Log.debug("clients为{"+clients+"}");
+		}
+		
+		if (clients.get(clientID) == null) {
+			throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+		} else {
+			Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+		}
+		
+		//从会话列表中取出会话，然后通过此会话发送publish消息
+		clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+	}
+	
+	/**
 	 * <li>方法名 sendPubAck
 	 * <li>@param clientID
 	 * <li>@param packgeID
@@ -317,6 +380,40 @@ public class ProtocolProcess {
 				}	            
 	        	
 				clients.get(clientID).getClient().writeMsgToReqClient(pubAckMessage);
+	        }catch(Throwable t) {
+	            Log.error(null, t);
+	        }
+	    }
+	
+	/**
+	 * <li>方法名 sendPubRec
+	 * <li>@param clientID
+	 * <li>@param packgeID
+	 * <li>返回类型 void
+	 * <li>说明 回写PubRec消息给发来publish的客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-21
+	 */
+	private void sendPubRec(String clientID, Integer packgeID) {
+	        Log.trace("发送PubAck消息给客户端");
+
+	        PubRecMessage pubRecMessage = new PubRecMessage();
+	        pubRecMessage.setPackgeID(packgeID);
+	        
+	        try {
+	        	if (clients == null) {
+					throw new RuntimeException("内部错误，clients为null");
+				} else {
+					Log.debug("clients为{"+clients+"}");
+				}
+	        	
+	        	if (clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+				} else {
+					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+				}	            
+	        	
+				clients.get(clientID).getClient().writeMsgToReqClient(pubRecMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -356,7 +453,13 @@ public class ProtocolProcess {
 		
 		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
 		for (PublishEvent pubEvent : publishedEvents) {
-			messagesStore.removeMessageInSessionForPublish(pubEvent);
+			sendPublishMessage(pubEvent.getClientID(), 
+							   pubEvent.getTopic(), 
+							   pubEvent.getQos(), 
+							   pubEvent.getMessage(), 
+							   pubEvent.isRetain(), 
+							   pubEvent.getPackgeID());
+			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
 		}
 	}
 }
