@@ -12,6 +12,8 @@ import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PubRecMessage;
+import com.syxy.protocol.mqttImp.message.PubRelMessage;
+import com.syxy.protocol.mqttImp.message.PubcompMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
@@ -261,6 +263,58 @@ public class ProtocolProcess {
 	}
 	
 	/**
+	 * <li>方法名 processPubRec
+	 * <li>@param client
+	 * <li>@param pubRecMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的pubRec消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-23
+	 */
+	void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 int packgeID = pubRecMessage.getPackgeID();
+		 messagesStore.removeTempMessageForPublish(clientID, packgeID);
+		 //此处须额外处理，根据不同的事件，处理不同的包ID
+		 messagesStore.storePackgeID(clientID, packgeID);
+		 //发回PubRel
+		 sendPubRel(clientID, packgeID);
+	}
+	
+	/**
+	 * <li>方法名 processPubRel
+	 * <li>@param client
+	 * <li>@param pubRelMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的pubRel消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-23
+	 */
+	void processPubRel(ClientSession client, PubRelMessage pubRelMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 //删除的是接收端的包ID
+		 int packgeID = pubRelMessage.getPackgeID();
+		 
+		 messagesStore.removePackgeID(clientID);
+		 sendPubComp(clientID, packgeID);
+	}
+	
+	/**
+	 * <li>方法名 processPubComp
+	 * <li>@param client
+	 * <li>@param pubcompMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的pubComp消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-23
+	 */
+	void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 //删除存储的PubRec包ID
+		 messagesStore.removePackgeID(clientID);
+	}
+	
+	/**
 	 * <li>方法名 sendPulicMessage
 	 * <li>@param topic
 	 * <li>@param qos
@@ -395,7 +449,7 @@ public class ProtocolProcess {
 	 * <li>创建日期 2015-5-21
 	 */
 	private void sendPubRec(String clientID, Integer packgeID) {
-	        Log.trace("发送PubAck消息给客户端");
+	        Log.trace("发送PubRec消息给客户端");
 
 	        PubRecMessage pubRecMessage = new PubRecMessage();
 	        pubRecMessage.setPackgeID(packgeID);
@@ -414,6 +468,74 @@ public class ProtocolProcess {
 				}	            
 	        	
 				clients.get(clientID).getClient().writeMsgToReqClient(pubRecMessage);
+	        }catch(Throwable t) {
+	            Log.error(null, t);
+	        }
+	    }
+	
+	/**
+	 * <li>方法名 sendPubRel
+	 * <li>@param clientID
+	 * <li>@param packgeID
+	 * <li>返回类型 void
+	 * <li>说明 回写PubRel消息给发来publish的客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-23
+	 */
+	private void sendPubRel(String clientID, Integer packgeID) {
+	        Log.trace("发送PubRel消息给客户端");
+
+	        PubRelMessage pubRelMessage = new PubRelMessage();
+	        pubRelMessage.setPackgeID(packgeID);
+	        
+	        try {
+	        	if (clients == null) {
+					throw new RuntimeException("内部错误，clients为null");
+				} else {
+					Log.debug("clients为{"+clients+"}");
+				}
+	        	
+	        	if (clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+				} else {
+					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+				}	            
+	        	
+				clients.get(clientID).getClient().writeMsgToReqClient(pubRelMessage);
+	        }catch(Throwable t) {
+	            Log.error(null, t);
+	        }
+	    }
+	
+	/**
+	 * <li>方法名 sendPubComp
+	 * <li>@param clientID
+	 * <li>@param packgeID
+	 * <li>返回类型 void
+	 * <li>说明 回写PubRel消息给发来publish的客户端
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-23
+	 */
+	private void sendPubComp(String clientID, Integer packgeID) {
+	        Log.trace("发送PubComp消息给客户端");
+
+	        PubcompMessage pubcompMessage = new PubcompMessage();
+	        pubcompMessage.setPackgeID(packgeID);
+	        
+	        try {
+	        	if (clients == null) {
+					throw new RuntimeException("内部错误，clients为null");
+				} else {
+					Log.debug("clients为{"+clients+"}");
+				}
+	        	
+	        	if (clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+				} else {
+					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+				}	            
+	        	
+				clients.get(clientID).getClient().writeMsgToReqClient(pubcompMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }

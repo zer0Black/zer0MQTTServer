@@ -56,13 +56,12 @@ public interface IMessagesStore {
 	/**
 	 * <li>方法名 removePackgeID
 	 * <li>@param clientID
-	 * <li>@param packgeID
 	 * <li>返回参数 void
 	 * <li>说明 移除包ID
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void removePackgeID(String clientID, Integer packgeID);
+	void removePackgeID(String clientID);
 	
 	/**
 	 * <li>方法名 storeTempMessageForPublish
@@ -76,11 +75,12 @@ public interface IMessagesStore {
 	
 	/**
 	 * <li>方法名 removeTempMessageForPublish
-	 * <li>@param pubEvent
+	 * <li>@param clientID
+	 * <li>@param packgeID
 	 * <li>返回参数 void
 	 * <li>说明 删除临时的Publish信息
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void removeTempMessageForPublish(PublishEvent pubEvent);
+	void removeTempMessageForPublish(String clientID, Integer packgeID);
 }
