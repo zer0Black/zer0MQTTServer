@@ -10,11 +10,15 @@ import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.DisconnectMessage;
+import com.syxy.protocol.mqttImp.message.PingReqMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PubRecMessage;
 import com.syxy.protocol.mqttImp.message.PubRelMessage;
 import com.syxy.protocol.mqttImp.message.PubcompMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.message.SubscribeMessage;
+import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Impl.ISessionStore;
@@ -312,6 +316,58 @@ public class ProtocolProcess {
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 //删除存储的PubRec包ID
 		 messagesStore.removePackgeID(clientID);
+	}
+	
+	/**
+	 * <li>方法名 processSubscribe
+	 * <li>@param client
+	 * <li>@param subscribeMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的subscribe消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-24
+	 */
+	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	}
+	
+	/**
+	 * <li>方法名 processUnSubscribe
+	 * <li>@param client
+	 * <li>@param unSubscribeMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的unSubscribe消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-24
+	 */
+	void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	}
+	
+	/**
+	 * <li>方法名 processPingReq
+	 * <li>@param client
+	 * <li>@param pingReqMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的pingReq消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-24
+	 */
+	void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	}
+	
+	/**
+	 * <li>方法名 processDisconnect
+	 * <li>@param client
+	 * <li>@param disconnectMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理协议的disconnect消息类型
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-24
+	 */
+	void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
+		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 	}
 	
 	/**
