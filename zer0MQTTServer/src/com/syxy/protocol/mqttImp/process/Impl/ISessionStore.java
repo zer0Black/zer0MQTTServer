@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process.Impl;
 
+import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
+
 /**
  * <li>说明 会话存储类
  * <li>作者 zer0
@@ -26,4 +28,15 @@ public interface ISessionStore {
 	 * <li>创建日期 2015-05-19
 	 */
 	void wipeSubscriptions(String clientID);
+	
+	/**
+	 * <li>方法名 addNewSubscription
+	 * <li>@param newSubscription
+	 * <li>@param clientID
+	 * <li>返回参数 void
+	 * <li>说明 添加某个订阅消息到存储
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-25
+	 */
+	void addNewSubscription(Subscription newSubscription, String clientID);
 }

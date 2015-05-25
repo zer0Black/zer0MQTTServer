@@ -19,6 +19,7 @@ import com.syxy.protocol.mqttImp.message.PubRecMessage;
 import com.syxy.protocol.mqttImp.message.PubRelMessage;
 import com.syxy.protocol.mqttImp.message.PubcompMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
@@ -328,12 +329,34 @@ public class ProtocolProcess {
 	 * <li>说明 处理协议的subscribe消息类型
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-24
+	 * @throws Exception 
 	 */
-	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage){ 
+	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage) throws Exception{ 
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
 		 Log.info("处理subscribe数据包，客户端ID={"+clientID+"},cleanSession={"+cleanSession+"}");
 		 //一条subscribeMessage信息可能包含多个Topic和Qos
+		 List<String> topicFilters = subscribeMessage.getTopicFilter();
+		 List<QoS> Qoss = subscribeMessage.getRequestQos();
+		 if (topicFilters.size() == Qoss.size()) {
+			//依次处理订阅
+			for (int i = 0; i < topicFilters.size(); i++) {
+				QoS qos = Qoss.get(i);
+				String topic = topicFilters.get(i);
+				Subscription newSubscription = new Subscription(clientID, topic, qos, cleanSession);
+				//订阅新的订阅
+				subscribeSingleTopic(newSubscription, topic);
+			}
+			SubAckMessage subAckMessage = new SubAckMessage(subscribeMessage.getPackgeID());
+			 for (int i = 0; i < Qoss.size(); i++) {
+				 QoS qos = Qoss.get(i);
+				 subAckMessage.addGrantedQoSs(qos);
+			 }
+			 Log.info("回写subAck消息给订阅者，包ID={"+subscribeMessage.getPackgeID()+"}");
+			 client.writeMsgToReqClient(subAckMessage);
+		 }else{
+			throw new Exception("订阅的主题和Qos数量不等，终端订阅");
+		 }
 	}
 	
 	/**
@@ -373,6 +396,50 @@ public class ProtocolProcess {
 	 */
 	void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	}
+	
+	/**
+	 * <li>方法名 cleanSession
+	 * <li>@param clientID
+	 * <li>返回类型 void
+	 * <li>说明 清除会话，除了要从订阅树中删掉会话信息，还要从会话存储中删除会话信息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-07
+	 */
+	private void cleanSession(String clientID) {
+		subscribeStore.removeForClient(clientID);
+		//从会话存储中删除信息
+		sessionStore.wipeSubscriptions(clientID);
+	}
+	
+	/**
+	 * <li>方法名 republishMessage
+	 * <li>@param clientID
+	 * <li>返回类型 void
+	 * <li>说明 在客户端重连以后，针对QoS1和Qos2的消息，重发存储的离线消息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-18
+	 */
+	private void republishMessage(String clientID){
+		//取出需要重发的消息列表
+		//查看消息列表是否为空，为空则返回
+		//不为空则依次发送消息并从会话中删除此消息
+		List<PublishEvent> publishedEvents = messagesStore.listMessagesInSession(clientID);
+		if (publishedEvents.isEmpty()) {
+			Log.info("没有客户端{"+clientID+"}存储的离线消息");
+			return;
+		}
+		
+		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
+		for (PublishEvent pubEvent : publishedEvents) {
+			sendPublishMessage(pubEvent.getClientID(), 
+							   pubEvent.getTopic(), 
+							   pubEvent.getQos(), 
+							   pubEvent.getMessage(), 
+							   pubEvent.isRetain(), 
+							   pubEvent.getPackgeID());
+			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
+		}
 	}
 	
 	/**
@@ -603,46 +670,19 @@ public class ProtocolProcess {
 	    }
 	
 	/**
-	 * <li>方法名 cleanSession
-	 * <li>@param clientID
+	 * <li>方法名 subscribeSingleTopic
+	 * <li>@param newSubscription
+	 * <li>@param topic
 	 * <li>返回类型 void
-	 * <li>说明 清除会话，除了要从订阅树中删掉会话信息，还要从会话存储中删除会话信息
+	 * <li>说明 处理一个单一订阅，存储到会话和订阅数
 	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-07
+	 * <li>创建日期 2015-5-25
 	 */
-	private void cleanSession(String clientID) {
-		subscribeStore.removeForClient(clientID);
-		//从会话存储中删除信息
-		sessionStore.wipeSubscriptions(clientID);
-	}
-	
-	/**
-	 * <li>方法名 republishMessage
-	 * <li>@param clientID
-	 * <li>返回类型 void
-	 * <li>说明 在客户端重连以后，针对QoS1和Qos2的消息，重发存储的离线消息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-18
-	 */
-	private void republishMessage(String clientID){
-		//取出需要重发的消息列表
-		//查看消息列表是否为空，为空则返回
-		//不为空则依次发送消息并从会话中删除此消息
-		List<PublishEvent> publishedEvents = messagesStore.listMessagesInSession(clientID);
-		if (publishedEvents.isEmpty()) {
-			Log.info("没有客户端{"+clientID+"}存储的离线消息");
-			return;
-		}
-		
-		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
-		for (PublishEvent pubEvent : publishedEvents) {
-			sendPublishMessage(pubEvent.getClientID(), 
-							   pubEvent.getTopic(), 
-							   pubEvent.getQos(), 
-							   pubEvent.getMessage(), 
-							   pubEvent.isRetain(), 
-							   pubEvent.getPackgeID());
-			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
-		}
+	private void subscribeSingleTopic(Subscription newSubscription, final String topic){
+		Log.info("订阅topic{"+topic+"},Qos为{"+newSubscription.getRequestedQos()+"}");
+		String clientID = newSubscription.getClientID();
+		sessionStore.addNewSubscription(newSubscription, clientID);
+		subscribeStore.addSubscrpition(newSubscription);
+		//TODO 此处还需要将此订阅之前存储的信息发出去
 	}
 }

@@ -56,7 +56,6 @@ public class UnSubscribeMessage extends Message {
 	@Override
 	public void handlerMessage(ClientSession client) {
 		// TODO Auto-generated method stub
-
 	}
 
 	@Override

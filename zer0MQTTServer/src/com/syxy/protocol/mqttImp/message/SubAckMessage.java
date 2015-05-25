@@ -74,4 +74,8 @@ public class SubAckMessage extends Message {
 	public void setGrantedQoSs(List<QoS> grantedQoSs) {
 		this.grantedQoSs = grantedQoSs;
 	}
+	
+	public void addGrantedQoSs(QoS qos){
+		grantedQoSs.add(qos);
+	}
 }
