@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import sun.util.logging.resources.logging;
+
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
@@ -327,8 +329,11 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-24
 	 */
-	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage){
+	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage){ 
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
+		 Log.info("处理subscribe数据包，客户端ID={"+clientID+"},cleanSession={"+cleanSession+"}");
+		 //一条subscribeMessage信息可能包含多个Topic和Qos
 	}
 	
 	/**
