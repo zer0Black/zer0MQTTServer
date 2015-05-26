@@ -1,7 +1,9 @@
 package com.syxy.protocol.mqttImp.process.Impl;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
+import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 
 /**
@@ -83,4 +85,26 @@ public interface IMessagesStore {
 	 * <li>创建日期 2015-05-21
 	 */
 	void removeTempMessageForPublish(String clientID, Integer packgeID);
+	
+	/**
+	 * <li>方法名 storeRetained
+	 * <li>@param topic
+	 * <li>@param message
+	 * <li>@param qos
+	 * <li>返回参数 void
+	 * <li>说明 持久化存储保留的信息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-26
+	 */
+    void storeRetained(String topic, byte[] message, QoS qos);
+    
+    /**
+	 * <li>方法名 cleanRetained
+	 * <li>@param topic
+	 * <li>返回参数 void
+	 * <li>说明 删除持久化存储保留的信息
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-26
+	 */
+    void cleanRetained(String topic);
 }

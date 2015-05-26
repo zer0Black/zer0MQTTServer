@@ -277,9 +277,9 @@ public class ProtocolProcess {
 		
 		if (retain) {
 			if (qos == QoS.AT_MOST_ONCE) {
-//				messagesStore.cleanRetained(topic);
+				messagesStore.cleanRetained(topic);
 			} else {
-//				messagesStore.storeRetained(topic, message, qos);
+				messagesStore.storeRetained(topic, message, qos);
 			}
 		}
 	}
