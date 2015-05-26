@@ -45,6 +45,29 @@ public class TreeNode {
     	subscriptions.add(subscription);
     }
     
+    /**
+	 * <li>方法名 removeSubscription
+	 * <li>@param subscription
+	 * <li>返回类型 {@link void}
+	 * <li>说明  添加新的clientID，clientID包含在subscription中，要注意避免重复添加和qos不一致但存在的情况
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-4-28
+     */
+    void removeSubscription(Subscription subscription){
+    	//避免同样的订阅添加进来
+    	if (subscriptions.contains(subscription)) {
+			return;
+		}
+    	
+    	//同一节点中topic是一样的，所以判断clientID是否重复，若topic和clientID一样，但qos不一样，就移除，重新添加
+    	for (Subscription s : subscriptions) {
+    		if (s.clientID.equals(subscription.clientID)) {
+				return;
+			}
+    	}
+    	
+    	subscriptions.add(subscription);
+    }
     
     /**
 	 * <li>方法名 addChild

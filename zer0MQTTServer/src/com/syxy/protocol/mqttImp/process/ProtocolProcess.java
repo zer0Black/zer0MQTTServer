@@ -14,6 +14,7 @@ import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.DisconnectMessage;
 import com.syxy.protocol.mqttImp.message.PingReqMessage;
+import com.syxy.protocol.mqttImp.message.PingRespMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PubRecMessage;
 import com.syxy.protocol.mqttImp.message.PubRelMessage;
@@ -21,6 +22,7 @@ import com.syxy.protocol.mqttImp.message.PubcompMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
+import com.syxy.protocol.mqttImp.message.UnSubAckMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
@@ -42,11 +44,11 @@ public class ProtocolProcess {
 	//遗嘱信息类
 	static final class WillMessage {
         private final String topic;
-        private final ByteBuffer payload;
+        private final byte[] payload;
         private final boolean retained;
         private final QoS qos;
 
-        public WillMessage(String topic, ByteBuffer payload, boolean retained, QoS qos) {
+        public WillMessage(String topic, byte[] payload, boolean retained, QoS qos) {
             this.topic = topic;
             this.payload = payload;
             this.retained = retained;
@@ -57,7 +59,7 @@ public class ProtocolProcess {
             return topic;
         }
 
-        public ByteBuffer getPayload() {
+        public byte[] getPayload() {
             return payload;
         }
 
@@ -142,9 +144,9 @@ public class ProtocolProcess {
 		if (connectMessage.isHasWill()) {
 			QoS willQos = connectMessage.getWillQoS();
 			byte[] willPayload = connectMessage.getWillMessage().getBytes();//获取遗嘱信息的具体内容
-			ByteBuffer byteBuffer = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
+//			ByteBuffer byteBuffer = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
 			WillMessage will = new WillMessage(connectMessage.getWillTopic(),
-					byteBuffer, connectMessage.isWillRetain(),willQos);
+					willPayload, connectMessage.isWillRetain(),willQos);
 			//把遗嘱信息与和其对应的的clientID存储在一起
 			willStore.put(connectMessage.getClientId(), will);
 		}
@@ -212,6 +214,26 @@ public class ProtocolProcess {
 	/**
 	 * <li>方法名 processPublic
 	 * <li>@param client
+	 * <li>@param willMessage
+	 * <li>返回类型 void
+	 * <li>说明 处理遗言消息的发送
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-5-26
+	 */
+	public void processPublic(ClientSession client, WillMessage willMessage){
+		Log.info("处理遗言的publish数据");
+		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		final String topic = willMessage.getTopic();
+	    final QoS qos = willMessage.getQos();
+	    final byte[] message = willMessage.getPayload();
+	    boolean retain = willMessage.isRetained();
+	    
+	    processPublic(clientID, topic, qos, message, retain, null);
+	}
+	
+	/**
+	 * <li>方法名 processPublic
+	 * <li>@param client
 	 * <li>@param topic
 	 * <li>@param qos
 	 * <li>@param message
@@ -251,6 +273,14 @@ public class ProtocolProcess {
 			sendPublishMessage(topic, qos, message, retain, packgeID);
 			
 			sendPubRec(clientID, packgeID);
+		}
+		
+		if (retain) {
+			if (qos == QoS.AT_MOST_ONCE) {
+//				messagesStore.cleanRetained(topic);
+			} else {
+//				messagesStore.storeRetained(topic, message, qos);
+			}
 		}
 	}
 	
@@ -370,6 +400,18 @@ public class ProtocolProcess {
 	 */
 	void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 int packgeID = unSubscribeMessage.getPackgeID();
+		 Log.info("处理unSubscribe数据包，客户端ID={"+clientID+"}");
+		 List<String> topicFilters = unSubscribeMessage.getTopicFilter();
+		 for (String topic : topicFilters) {
+			//TODO 取消订阅树里的订阅
+//			subscribeStore.removeSubscription(topic, clientID);
+			sessionStore.removeSubscription(topic, clientID);
+		 }
+		 
+		 UnSubAckMessage unSubAckMessage = new UnSubAckMessage(packgeID);
+		 Log.info("回写unSubAck信息给客户端，包ID为{"+packgeID+"}");
+		 client.writeMsgToReqClient(unSubAckMessage);
 	}
 	
 	/**
@@ -382,7 +424,9 @@ public class ProtocolProcess {
 	 * <li>创建日期 2015-5-24
 	 */
 	void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+//		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 PingRespMessage pingRespMessage = new PingRespMessage();
+		 client.writeMsgToReqClient(pingRespMessage);
 	}
 	
 	/**
@@ -396,6 +440,20 @@ public class ProtocolProcess {
 	 */
 	void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
+		 if (cleanSession) {
+			cleanSession(clientID);
+		 }
+		 
+		 //如果有遗言消息，就发遗言出去
+		 if (willStore.containsKey(clientID)) {
+			WillMessage will = willStore.get(clientID);
+			processPublic(client, will);
+			willStore.remove(clientID);
+		 }
+		 
+		 clients.remove(clientID);
+		 client.close();
 	}
 	
 	/**

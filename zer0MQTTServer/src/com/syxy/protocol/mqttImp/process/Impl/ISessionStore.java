@@ -39,4 +39,15 @@ public interface ISessionStore {
 	 * <li>创建日期 2015-05-25
 	 */
 	void addNewSubscription(Subscription newSubscription, String clientID);
+	
+	/**
+	 * <li>方法名 removeSubscription
+	 * <li>@param topic
+	 * <li>@param clientID
+	 * <li>返回参数 void
+	 * <li>说明 从会话的持久化存储中移除某个订阅主题中的某个client
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-26
+	 */
+	void removeSubscription(String topic, String clientID);
 }

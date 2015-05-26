@@ -27,7 +27,7 @@ public class SubscribeStore {
 	 * @return 
 	 */
 	public void addSubscrpition(Subscription newSubscription){	
-		List<TreeNode> treeNodes = searchNode(newSubscription.topicFilter);
+		List<TreeNode> treeNodes = searchNodeList(newSubscription.topicFilter);
 		for (TreeNode t : treeNodes) {
 			t.addSubscription(newSubscription);
 		}
@@ -41,7 +41,7 @@ public class SubscribeStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-4-25
      */
-	public List<TreeNode> searchNode(String topic){
+	public List<TreeNode> searchNodeList(String topic){
 		List<Token> tokens = new ArrayList<Token>();
 		List<TreeNode> childList = new ArrayList<TreeNode>();
 		
@@ -55,7 +55,7 @@ public class SubscribeStore {
 			Token token = tokens.get(i);
 			TreeNode matchingChildren = current;
  
-			//为实现简便，此处违反协议
+			//TODO 为实现简便，此处违反协议
 			if (token == Token.SINGLE) {
 				//判断‘+’是不是在队列最后一个
 				if (i == tokens.size() - 1) {
@@ -91,7 +91,6 @@ public class SubscribeStore {
 		return childList;
 	}
 	
-	
     /**
 	 * <li>方法名 getClientListFromTopic
 	 * <li>@param topic
@@ -113,17 +112,30 @@ public class SubscribeStore {
 		return matchingSubs;
 	}
 	
-	   /**
-	  	 * <li>方法名 removeForClient
-	  	 * <li>param clientID
-	  	 * <li>返回类型 {@link void}
-	  	 * <li>说明  把某个clientID从订阅树里移走
-	  	 * <li>作者 zer0
-	  	 * <li>创建日期 2015-5-04
-	     */
-	    public void removeForClient(String clientID) {
-	    	root.removeClientSubscription(clientID);
-		}
+	/**
+  	 * <li>方法名 removeForClient
+  	 * <li>param clientID
+  	 * <li>返回类型 {@link void}
+  	 * <li>说明  把某个clientID从订阅树里移走
+  	 * <li>作者 zer0
+  	 * <li>创建日期 2015-5-04
+     */
+	public void removeForClient(String clientID) {
+	    root.removeClientSubscription(clientID);
+	}
+	
+	/**
+	 * <li>方法名 removeSubscription
+	 * <li>@param topic
+	 * <li>@param clientID
+	 * <li>返回参数 void
+	 * <li>说明 从订阅结构树中移除某个订阅主题中的某个client
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-26
+	 */
+	void removeSubscription(String topic, String clientID){
+		//TODO 该处需要处理清楚如何删除的问题，订阅 和 取消订阅以后再处理清楚
+	}
 	
     /**
 	 * <li>方法名 parseTopic
