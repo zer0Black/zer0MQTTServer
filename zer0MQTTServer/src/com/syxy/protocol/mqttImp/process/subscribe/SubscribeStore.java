@@ -19,12 +19,11 @@ public class SubscribeStore {
 	
 	/**
 	 * <li>方法名 addSuscription
-	 * <li>@param 
+	 * <li>@param newSubscription
 	 * <li>返回类型 void
 	 * <li>说明 添加新的订阅到订阅树里
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-4-19
-	 * @return 
 	 */
 	public void addSubscrpition(Subscription newSubscription){	
 		List<TreeNode> treeNodes = searchNodeList(newSubscription.topicFilter);
@@ -34,7 +33,7 @@ public class SubscribeStore {
 	} 
 
 	 /**
-	 * <li>方法名  searchNode
+	 * <li>方法名  searchNodeList
 	 * <li>@param topic
 	 * <li>返回类型 {@link List<TreeNode>}
 	 * <li>说明 根据topic搜索节点，若无此节点则创建,最后返回一个所搜索的所有节点的列表
@@ -83,7 +82,7 @@ public class SubscribeStore {
 				current = matchingChildren;
 			}
 			
-			//如果该token是最后一个，则添加打返回列表里
+			//如果该token是最后一个，则添加到返回列表里
 			if (i == tokens.size() - 1) {
 				childList.add(current);
 			}
@@ -131,10 +130,17 @@ public class SubscribeStore {
 	 * <li>返回参数 void
 	 * <li>说明 从订阅结构树中移除某个订阅主题中的某个client
 	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-26
+	 * <li>创建日期 2015-06-29
 	 */
-	void removeSubscription(String topic, String clientID){
-		//TODO 该处需要处理清楚如何删除的问题，订阅 和 取消订阅以后再处理清楚
+	public void removeSubscription(String topic, String clientID){
+		List<TreeNode> treeNodes = searchNodeList(topic);
+		for (TreeNode t : treeNodes) {
+			t.removeClientSubscription(clientID);
+			//如果某个节点的订阅量为空，并且该节点无子节点，则删除它
+			if (t.subscriptions.size() == 0 && t.children.size() == 0) {
+				t.parent.children.remove(t);
+			}
+		}
 	}
 	
     /**

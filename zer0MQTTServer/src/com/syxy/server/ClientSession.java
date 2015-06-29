@@ -5,10 +5,12 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.ClosedChannelException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.log4j.Logger;
+
 import com.syxy.Aiohandler.AioReadHandler;
 import com.syxy.Aiohandler.AioWriteHandler;
 import com.syxy.protocol.ICoderHandler;
@@ -16,6 +18,7 @@ import com.syxy.protocol.IDecoderHandler;
 import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.util.BufferPool;
+import com.syxy.util.Constant;
 
 /**
  * <li>说明 客户session，每个连接一个ClientSession对象，用于处理客户请求和响应
@@ -37,7 +40,6 @@ public class ClientSession {
 	private AioReadHandler readHandler;// 读取处理器
 	private AioWriteHandler writeHandler;// 回写处理器	
 	
-//	private String requestMsg;//请求的信息
 	private ByteBuffer byteBuffer;// 缓冲区
 	
 	private Object index;// 客户端在索引
@@ -127,7 +129,6 @@ public class ClientSession {
 	 */
 	public void close(){
 		try{
-//			this.socketServer.closeServer(index);// 清除
 			this.socketChannel.close();		
 		} catch (ClosedChannelException e) {
 			e.printStackTrace();
@@ -187,26 +188,6 @@ public class ClientSession {
 //		this.close();
 	}
 	
-//	/**
-//	 * <li>方法名 writeMsgToEveryOne
-//	 * <li>@param msg
-//	 * <li>@param byteBuffer
-//	 * <li>返回类型 void
-//	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
-//	 * <li>作者 zer0
-//	 * <li>创建日期 2015-3-4
-//	 */
-//	public void writeMsgToEveryOne(Message msg){
-//		try {
-//			ByteBuffer byteBuffer = this.encodeProtocol(msg);
-//			byteBuffer.flip();
-//			this.sendMsgToEveryOne(byteBuffer);
-//		} catch (Exception e) {
-//			Log.error("回写数据给所有人出错，请检查");
-//			e.printStackTrace();
-//		}
-//	}
-	
 	/**
 	 * <li>方法名 writeMsgToEveryOne
 	 * <li>@param msg
@@ -248,22 +229,30 @@ public class ClientSession {
 		return null;
 	}
 	
-//	/**
-//	 * <li>方法名 sendMsgToEveryOne
-//	 * <li>@param byteBuffer
-//	 * <li>返回类型 void
-//	 * <li>说明 回写数据
-//	 * <li>作者 zer0
-//	 * <li>创建日期 2015-2-22
-//	 */
-//	private void sendMsgToEveryOne(ByteBuffer byteBuffer) throws Exception{	
-//		Log.info("回写数据给所有客户端");
-//		Iterator<ClientSession> it = socketServer.getClients().values().iterator();
-//		while(it.hasNext()){
-//			ClientSession client = it.next();
-//			client.socketChannel.write(byteBuffer, this, this.writeHandler);
-//		}
-//	}
+	/**
+	 * <li>方法名 keepAliveHandler
+	 * <li>返回类型 void
+	 * <li>说明 处理心跳包动作，超过心跳包时长的1.5呗时间未接收到心跳包数据，则视为与客户端与服务器失去连接，断开客户连接
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-6-29
+	 * @throws IOException 
+	 */
+	public void keepAliveHandler(String flag){
+		final int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
+		final Timer timer = new Timer();
+		if (flag.equals("pingReqIsArrive")) {
+			timer.cancel();
+		}
+		TimerTask tt=new TimerTask() { 
+            @Override
+            public void run() {
+            	Log.info("已经"+ keepAlive*1.5f +"未收到心跳包,应断开连接");
+            	timer.cancel();
+            	close();
+            }
+        };
+        timer.schedule(tt, (long) (keepAlive*1.5f));
+	}
 	
 	/**
 	 * <li>方法名 sendMsgToReqClient

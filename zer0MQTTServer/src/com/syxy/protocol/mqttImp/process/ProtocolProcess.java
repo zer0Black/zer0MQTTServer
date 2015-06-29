@@ -136,15 +136,15 @@ public class ProtocolProcess {
 		Log.debug("连接的心跳包时长是 {" + keepAlive + "} s");
 		client.setAttributesKeys(Constant.CLIENT_ID, connectMessage.getClientId());//clientID属性用于subscribe和publish的处理
 		client.setAttributesKeys(Constant.CLEAN_SESSION, connectMessage.isCleanSession());
-		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive);
 		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接
-//		client.setIdleTime(Math.round(keepAlive * 1.5f));
+		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive);
+		//开启心跳包验证
+//		client.keepAliveHandler();
 		
 		//处理Will flag（遗嘱信息）,协议P26
 		if (connectMessage.isHasWill()) {
 			QoS willQos = connectMessage.getWillQoS();
 			byte[] willPayload = connectMessage.getWillMessage().getBytes();//获取遗嘱信息的具体内容
-//			ByteBuffer byteBuffer = (ByteBuffer) ByteBuffer.allocate(willPayload.length).put(willPayload).flip();
 			WillMessage will = new WillMessage(connectMessage.getWillTopic(),
 					willPayload, connectMessage.isWillRetain(),willQos);
 			//把遗嘱信息与和其对应的的clientID存储在一起
@@ -405,7 +405,7 @@ public class ProtocolProcess {
 		 List<String> topicFilters = unSubscribeMessage.getTopicFilter();
 		 for (String topic : topicFilters) {
 			//TODO 取消订阅树里的订阅
-//			subscribeStore.removeSubscription(topic, clientID);
+			subscribeStore.removeSubscription(topic, clientID);
 			sessionStore.removeSubscription(topic, clientID);
 		 }
 		 
@@ -424,7 +424,6 @@ public class ProtocolProcess {
 	 * <li>创建日期 2015-5-24
 	 */
 	void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
-//		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 PingRespMessage pingRespMessage = new PingRespMessage();
 		 client.writeMsgToReqClient(pingRespMessage);
 	}
