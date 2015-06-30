@@ -87,7 +87,7 @@ public class ClientSession {
 			if (this.socketChannel.isOpen()){
 //				this.byteBuffer = ByteBuffer.allocate(1024 * 64);   
 				this.byteBuffer = BufferPool.getInstance().getBuffer();
-	            this.socketChannel.read(this.byteBuffer, this, this.readHandler); 
+	            this.socketChannel.read(this.byteBuffer, this, this.readHandler);    
 	        } else {  
 	            Log.info("会话被取消或者关闭");  
 	        }
@@ -154,7 +154,6 @@ public class ClientSession {
 		try {
 			return this.socketChannel.getRemoteAddress().toString();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
@@ -200,11 +199,7 @@ public class ClientSession {
 	public void writeMsgToReqClient(Message msg){
 		try {
 			ByteBuffer byteBuffer = this.encodeProtocol(msg);
-//			Log.info("byteBuffer的position="+byteBuffer.position());
-//			Log.info("byteBuffer的limit="+byteBuffer.limit());
 			byteBuffer.flip();
-//			Log.info("byteBuffer flip后的position="+byteBuffer.position());
-//			Log.info("byteBuffer flip后的limit="+byteBuffer.limit());
 			this.sendMsgToReqClient(byteBuffer);
 		} catch (Exception e) {
 			Log.error("回写数据给请求者出错，请检查");
@@ -238,20 +233,38 @@ public class ClientSession {
 	 * @throws IOException 
 	 */
 	public void keepAliveHandler(String flag){
-		final int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
-		final Timer timer = new Timer();
-		if (flag.equals("pingReqIsArrive")) {
-			timer.cancel();
+		int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
+		Timer timer = new Timer();
+		TimeOutTask tt=new TimeOutTask(keepAlive);
+		if (flag.equals(Constant.CONNECT_ARRIVE)) {
+	        timer.schedule(tt, (long) (keepAlive*1.5f));
+		}else if (flag.equals(Constant.PING_ARRIVE)) {
+			tt.cancel();//取消当前的timeout任务
+	        tt = new TimeOutTask(keepAlive);
+	        timer.schedule (tt, (long) (keepAlive*1.5f));//重新开始计时
 		}
-		TimerTask tt=new TimerTask() { 
-            @Override
-            public void run() {
-            	Log.info("已经"+ keepAlive*1.5f +"未收到心跳包,应断开连接");
-            	timer.cancel();
-            	close();
-            }
-        };
-        timer.schedule(tt, (long) (keepAlive*1.5f));
+	}
+	
+	/**
+	 * <li>说明 心跳包时间控制器，到时间以后则断开连接
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-6-30
+	 */
+	class TimeOutTask extends TimerTask{
+
+		private int keepAliveTime = 0;
+		
+		public TimeOutTask(int keepAliveTime) {
+			this.keepAliveTime = keepAliveTime;
+		}
+		
+		@Override
+		public void run() {
+			Log.info("已经"+ keepAliveTime*1.5f +"毫秒未收到心跳包,应断开连接");
+			this.cancel();
+			close();
+		}
+		
 	}
 	
 	/**

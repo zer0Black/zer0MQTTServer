@@ -52,12 +52,6 @@ public class SubAckMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage(ClientSession client) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public int messageLength(Message msg) {
 		return grantedQoSs == null ? 2 : 2 + grantedQoSs.size();
 	}

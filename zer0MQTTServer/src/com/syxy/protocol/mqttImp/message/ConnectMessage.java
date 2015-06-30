@@ -143,25 +143,6 @@ public class ConnectMessage extends Message {
 		
 		return connectMessage;
 	}
-
-	@Override
-	public void handlerMessage(ClientSession client) {
-//		Log.info("处理Connect的数据");
-//		//首先查看保留位是否为0，不为0则断开连接
-//		if (!this.isReservedIsZero()) {
-//			client.close();
-//		}
-//		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0
-//		if (!this.getProtocolName().equals("MQTT") || this.getProtocolVersionNumber() != 4 ) {
-//			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
-//			client.close();//版本或协议名不匹配，则断开该客户端连接
-//		}
-		
-		
-		
-//		client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.ACCEPTED, 1));
-		
-	}
 	
 	@Override
 	public int messageLength(Message msg){

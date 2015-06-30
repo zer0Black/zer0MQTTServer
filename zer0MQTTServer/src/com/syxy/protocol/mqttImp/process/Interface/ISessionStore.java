@@ -1,4 +1,4 @@
-package com.syxy.protocol.mqttImp.process.Impl;
+package com.syxy.protocol.mqttImp.process.Interface;
 
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 

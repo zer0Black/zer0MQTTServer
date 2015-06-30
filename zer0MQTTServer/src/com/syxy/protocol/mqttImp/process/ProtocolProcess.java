@@ -24,9 +24,9 @@ import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubAckMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
-import com.syxy.protocol.mqttImp.process.Impl.IAuthenticator;
-import com.syxy.protocol.mqttImp.process.Impl.IMessagesStore;
-import com.syxy.protocol.mqttImp.process.Impl.ISessionStore;
+import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
+import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
+import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
@@ -84,17 +84,32 @@ public class ProtocolProcess {
 	private ISessionStore sessionStore;
 	private SubscribeStore subscribeStore;
 	
-	/**
-	 * <li>方法名 init
-	 * <li>@param authenticator 该参数用于做权限管理
-	 * <li>返回类型 void
-	 * <li>说明 初始化处理程序
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-8
-	 */
-	void init(IAuthenticator authenticator){
+//	/**
+//	 * <li>方法名 init
+//	 * <li>@param authenticator 该参数用于做权限管理
+//	 * <li>@param messagesStore 该参数用于做消息存储
+//	 * <li>@param sessionStore 该参数用于做会话存储
+//	 * <li>返回类型 void
+//	 * <li>说明 初始化处理程序
+//	 * <li>作者 zer0
+//	 * <li>创建日期 2015-3-8
+//	 */
+//	public void init(IAuthenticator authenticator, IMessagesStore messagesStore,
+//			ISessionStore sessionStore){
+//		this.authenticator = authenticator;
+//		this.messagesStore = messagesStore;
+//		this.sessionStore = sessionStore;
+//		this.subscribeStore = new SubscribeStore();
+//	}
+	
+	public ProtocolProcess(IAuthenticator authenticator, IMessagesStore messagesStore,
+			ISessionStore sessionStore){
 		this.authenticator = authenticator;
+		this.messagesStore = messagesStore;
+		this.sessionStore = sessionStore;
+		this.subscribeStore = new SubscribeStore();
 	}
+
 	
 	/**
 	 * <li>方法名 processConnect
@@ -136,10 +151,10 @@ public class ProtocolProcess {
 		Log.debug("连接的心跳包时长是 {" + keepAlive + "} s");
 		client.setAttributesKeys(Constant.CLIENT_ID, connectMessage.getClientId());//clientID属性用于subscribe和publish的处理
 		client.setAttributesKeys(Constant.CLEAN_SESSION, connectMessage.isCleanSession());
-		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接
-		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive);
-		//开启心跳包验证
-//		client.keepAliveHandler();
+		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接(但这里要注意把单位是s转为ms)
+		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive *1000);
+		//开启心跳包计时验证
+		client.keepAliveHandler(Constant.CONNECT_ARRIVE);
 		
 		//处理Will flag（遗嘱信息）,协议P26
 		if (connectMessage.isHasWill()) {
@@ -151,12 +166,9 @@ public class ProtocolProcess {
 			willStore.put(connectMessage.getClientId(), will);
 		}
 		//处理身份验证（userNameFlag和passwordFlag）
-		if (connectMessage.isHasUsername()) {
+		if (connectMessage.isHasUsername() && connectMessage.isHasPassword()) {
 			String userName = connectMessage.getUsername();
-			String pwd = null;
-			if (connectMessage.isHasPassword()) {
-				 pwd = connectMessage.getPassword();
-			}
+			String pwd = connectMessage.getPassword();
 			//此处对用户名和密码做验证
 			if (!authenticator.checkValid(userName, pwd)) {
 				ConnAckMessage badAckMessage = new ConnAckMessage(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, 0);
@@ -207,7 +219,7 @@ public class ProtocolProcess {
 	    final byte[] message = publishMessage.getData();
 	    boolean retain = publishMessage.isRetain();
 	    final int packgeID = publishMessage.getPackgeID();
-	    
+	    Log.info("收到的荷载为"+message.toString());
 	    processPublic(clientID, topic, qos, message, retain, packgeID);
 	}
 	
@@ -293,7 +305,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-21
 	 */
-	void processPubAck(ClientSession client, PubAckMessage pubAckMessage){
+	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
 		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
@@ -308,7 +320,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-23
 	 */
-	void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
+	public void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubRecMessage.getPackgeID();
 		 messagesStore.removeTempMessageForPublish(clientID, packgeID);
@@ -327,7 +339,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-23
 	 */
-	void processPubRel(ClientSession client, PubRelMessage pubRelMessage){
+	public void processPubRel(ClientSession client, PubRelMessage pubRelMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 //删除的是接收端的包ID
 		 int packgeID = pubRelMessage.getPackgeID();
@@ -345,7 +357,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-23
 	 */
-	void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
+	public void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 //删除存储的PubRec包ID
 		 messagesStore.removePackgeID(clientID);
@@ -361,7 +373,7 @@ public class ProtocolProcess {
 	 * <li>创建日期 2015-5-24
 	 * @throws Exception 
 	 */
-	void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage) throws Exception{ 
+	public void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage) { 
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
 		 Log.info("处理subscribe数据包，客户端ID={"+clientID+"},cleanSession={"+cleanSession+"}");
@@ -385,7 +397,11 @@ public class ProtocolProcess {
 			 Log.info("回写subAck消息给订阅者，包ID={"+subscribeMessage.getPackgeID()+"}");
 			 client.writeMsgToReqClient(subAckMessage);
 		 }else{
-			throw new Exception("订阅的主题和Qos数量不等，终端订阅");
+			try {
+				throw new Exception("订阅的主题和Qos数量不等，终端订阅");
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		 }
 	}
 	
@@ -398,7 +414,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-24
 	 */
-	void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
+	public void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = unSubscribeMessage.getPackgeID();
 		 Log.info("处理unSubscribe数据包，客户端ID={"+clientID+"}");
@@ -423,8 +439,11 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-24
 	 */
-	void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
+	public void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
+		 Log.info("收到心跳包");
 		 PingRespMessage pingRespMessage = new PingRespMessage();
+		 //重置心跳包计时器
+		 client.keepAliveHandler(Constant.PING_ARRIVE);
 		 client.writeMsgToReqClient(pingRespMessage);
 	}
 	
@@ -437,7 +456,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-24
 	 */
-	void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
+	public void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
 		 if (cleanSession) {
@@ -451,7 +470,7 @@ public class ProtocolProcess {
 			willStore.remove(clientID);
 		 }
 		 
-		 clients.remove(clientID);
+		 this.clients.remove(clientID);
 		 client.close();
 	}
 	
@@ -532,20 +551,20 @@ public class ProtocolProcess {
 				publishMessage.setPackgeID(packgeID);
 			}
 			
-			if (clients == null) {
+			if (this.clients == null) {
 				throw new RuntimeException("内部错误，clients为null");
 			} else {
-				Log.debug("clients为{"+clients+"}");
+				Log.debug("clients为{"+this.clients+"}");
 			}
 			
-			if (clients.get(clientID) == null) {
-				throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+			if (this.clients.get(clientID) == null) {
+				throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 			} else {
-				Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+				Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 			}
 			
 			//从会话列表中取出会话，然后通过此会话发送publish消息
-			clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+			this.clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
 		}
 	}
 	
@@ -574,20 +593,20 @@ public class ProtocolProcess {
 			publishMessage.setPackgeID(packgeID);
 		}
 		
-		if (clients == null) {
+		if (this.clients == null) {
 			throw new RuntimeException("内部错误，clients为null");
 		} else {
-			Log.debug("clients为{"+clients+"}");
+			Log.debug("clients为{"+this.clients+"}");
 		}
 		
-		if (clients.get(clientID) == null) {
-			throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+		if (this.clients.get(clientID) == null) {
+			throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 		} else {
-			Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+			Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 		}
 		
 		//从会话列表中取出会话，然后通过此会话发送publish消息
-		clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+		this.clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
 	}
 	
 	/**
@@ -600,25 +619,25 @@ public class ProtocolProcess {
 	 * <li>创建日期 2015-5-21
 	 */
 	private void sendPubAck(String clientID, Integer packgeID) {
-	        Log.trace("发送PubAck消息给客户端");
+	        Log.info("发送PubAck消息给客户端");
 
 	        PubAckMessage pubAckMessage = new PubAckMessage();
 	        pubAckMessage.setPackgeID(packgeID);
 	        
 	        try {
-	        	if (clients == null) {
+	        	if (this.clients == null) {
 					throw new RuntimeException("内部错误，clients为null");
 				} else {
-					Log.debug("clients为{"+clients+"}");
+					Log.debug("clients为{"+this.clients+"}");
 				}
 	        	
-	        	if (clients.get(clientID) == null) {
-					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+	        	if (this.clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 				} else {
-					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-				clients.get(clientID).getClient().writeMsgToReqClient(pubAckMessage);
+				this.clients.get(clientID).getClient().writeMsgToReqClient(pubAckMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -640,19 +659,19 @@ public class ProtocolProcess {
 	        pubRecMessage.setPackgeID(packgeID);
 	        
 	        try {
-	        	if (clients == null) {
+	        	if (this.clients == null) {
 					throw new RuntimeException("内部错误，clients为null");
 				} else {
-					Log.debug("clients为{"+clients+"}");
+					Log.debug("clients为{"+this.clients+"}");
 				}
 	        	
-	        	if (clients.get(clientID) == null) {
-					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+	        	if (this.clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 				} else {
-					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-				clients.get(clientID).getClient().writeMsgToReqClient(pubRecMessage);
+	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubRecMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -674,19 +693,19 @@ public class ProtocolProcess {
 	        pubRelMessage.setPackgeID(packgeID);
 	        
 	        try {
-	        	if (clients == null) {
+	        	if (this.clients == null) {
 					throw new RuntimeException("内部错误，clients为null");
 				} else {
-					Log.debug("clients为{"+clients+"}");
+					Log.debug("clients为{"+this.clients+"}");
 				}
 	        	
-	        	if (clients.get(clientID) == null) {
-					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+	        	if (this.clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 				} else {
-					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-				clients.get(clientID).getClient().writeMsgToReqClient(pubRelMessage);
+	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubRelMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -708,19 +727,19 @@ public class ProtocolProcess {
 	        pubcompMessage.setPackgeID(packgeID);
 	        
 	        try {
-	        	if (clients == null) {
+	        	if (this.clients == null) {
 					throw new RuntimeException("内部错误，clients为null");
 				} else {
-					Log.debug("clients为{"+clients+"}");
+					Log.debug("clients为{"+this.clients+"}");
 				}
 	        	
-	        	if (clients.get(clientID) == null) {
-					throw new RuntimeException("不能从会话列表{"+clients+"}中找到clientID:{"+clientID+"}");
+	        	if (this.clients.get(clientID) == null) {
+					throw new RuntimeException("不能从会话列表{"+this.clients+"}中找到clientID:{"+clientID+"}");
 				} else {
-					Log.debug("从会话列表{"+clients+"}查找到clientID:{"+clientID+"}");
+					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-				clients.get(clientID).getClient().writeMsgToReqClient(pubcompMessage);
+	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubcompMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }

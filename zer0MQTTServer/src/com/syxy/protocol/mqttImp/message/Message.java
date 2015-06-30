@@ -64,16 +64,6 @@ public abstract class Message {
 	public abstract Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException;
 
 	/**
-	 * <li>方法名 handlerMessage
-	 * <li>@param client
-	 * <li>返回类型 void
-	 * <li>说明 根据协议，对解码后的信息做相应的处理,即调用client来回写信息之类
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-3
-	 */
-	public abstract void handlerMessage(ClientSession client);
-
-	/**
 	 * <li>方法名 messageLength
 	 * <li>返回类型 int
 	 * <li>说明 计算整个协议的字节数(可变协议头+消息体)
@@ -337,12 +327,7 @@ public abstract class Message {
 		@Override
 		public int messageLength(Message msg){
 			return HEADER_SIZE;         
-		}
-		         
-		@Override
-		public void handlerMessage(ClientSession client) {
-			
-		}
+		}     
 
 		@Override
 		public String toString() {

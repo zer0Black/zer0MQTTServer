@@ -100,17 +100,6 @@ public class PublishMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage(ClientSession client) {
-		if (this.getQos() == QoS.AT_MOST_ONCE) {
-			
-		}else if (this.getQos() == QoS.AT_LEAST_ONCE){	
-			client.writeMsgToReqClient(new PubAckMessage(this.getPackgeID()));
-		}else if (this.getQos() == QoS.EXACTLY_ONCE){
-			
-		}
-	}
-
-	@Override
 	public boolean isMessageIdRequired() {
 		// TODO Auto-generated method stub
 		return true;

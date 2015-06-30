@@ -37,11 +37,6 @@ public class DisconnectMessage extends Message {
 		return disconnectMessage;
 	}
 
-	@Override
-	public void handlerMessage(ClientSession client) {
-		// TODO Auto-generated method stub
-
-	}
 
 	@Override
 	public int messageLength(Message msg) {

@@ -54,11 +54,6 @@ public class UnSubscribeMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage(ClientSession client) {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
 	public int messageLength(Message msg) {
 		int length = 2; // message id length
 		for (String topicfilter : topicFilter) {

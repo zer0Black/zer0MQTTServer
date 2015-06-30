@@ -68,7 +68,7 @@ public class MQTTClientTest extends JFrame {
         options.setUserName(userName);  
         options.setPassword(passWord.toCharArray());  
         options.setConnectionTimeout(10);    
-        options.setKeepAliveInterval(10000);  
+        options.setKeepAliveInterval(60 * 5);  
         try {  
             client.setCallback(new MqttCallback() {  
   

@@ -44,12 +44,6 @@ public class PubAckMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage(ClientSession client) {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
 	public int messageLength(Message msg) {
 		// TODO Auto-generated method stub
 		return PUBACK_SIZE;

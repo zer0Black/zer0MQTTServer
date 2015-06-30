@@ -59,12 +59,6 @@ public class SubscribeMessage extends Message {
 	}
 
 	@Override
-	public void handlerMessage(ClientSession client) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public int messageLength(Message msg) {
 		// TODO Auto-generated method stub
 		int length = 2; // message id length
