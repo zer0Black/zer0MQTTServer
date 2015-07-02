@@ -70,7 +70,6 @@ public class ProtocolProcess {
         public QoS getQos() {
             return qos;
         }
-        
     }
 	
 	private final static Logger Log = Logger.getLogger(ProtocolProcess.class);
@@ -84,24 +83,6 @@ public class ProtocolProcess {
 	private ISessionStore sessionStore;
 	private SubscribeStore subscribeStore;
 	
-//	/**
-//	 * <li>方法名 init
-//	 * <li>@param authenticator 该参数用于做权限管理
-//	 * <li>@param messagesStore 该参数用于做消息存储
-//	 * <li>@param sessionStore 该参数用于做会话存储
-//	 * <li>返回类型 void
-//	 * <li>说明 初始化处理程序
-//	 * <li>作者 zer0
-//	 * <li>创建日期 2015-3-8
-//	 */
-//	public void init(IAuthenticator authenticator, IMessagesStore messagesStore,
-//			ISessionStore sessionStore){
-//		this.authenticator = authenticator;
-//		this.messagesStore = messagesStore;
-//		this.sessionStore = sessionStore;
-//		this.subscribeStore = new SubscribeStore();
-//	}
-	
 	public ProtocolProcess(IAuthenticator authenticator, IMessagesStore messagesStore,
 			ISessionStore sessionStore){
 		this.authenticator = authenticator;
@@ -109,7 +90,6 @@ public class ProtocolProcess {
 		this.sessionStore = sessionStore;
 		this.subscribeStore = new SubscribeStore();
 	}
-
 	
 	/**
 	 * <li>方法名 processConnect
@@ -142,6 +122,20 @@ public class ProtocolProcess {
 				client.close();
 			}
 		}
+		
+		//如果会话中已经存储了这个新连接的ID，就关闭之前的clientID
+		if (clients.containsKey(connectMessage.getClientId())) {
+			Log.error("客户端ID{"+connectMessage.getClientId()+"}已存在，强制关闭老连接");
+//			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+//			client.close();
+			ClientSession oldClientSession = clients.get(connectMessage.getClientId()).getClient();
+			boolean cleanSession = (Boolean)oldClientSession.getAttributesKeys(Constant.CLEAN_SESSION); 
+			if (cleanSession) {
+				cleanSession(connectMessage.getClientId());
+			}
+			oldClientSession.close();
+		}
+		
 		//若至此没问题，则将新客户端连接加入client的维护列表中
 		ConnectionDescriptor connectionDescriptor = 
 				new ConnectionDescriptor(connectMessage.getClientId(), client, connectMessage.isCleanSession());
