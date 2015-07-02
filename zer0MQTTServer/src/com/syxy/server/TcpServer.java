@@ -15,7 +15,7 @@ import com.syxy.Aiohandler.AioWriteHandler;
 import com.syxy.protocol.ICoderHandler;
 import com.syxy.protocol.IDecoderHandler;
 import com.syxy.protocol.IProcessHandler;
-import com.syxy.util.PropertiesTool;
+import com.syxy.util.MqttTool;
 
 /**
  * <li>说明 基于JAVA AIO的,面向TCP/IP的,非阻塞式Sockect服务器框架类
@@ -57,19 +57,19 @@ public class TcpServer {
 	
 	public TcpServer(ICoderHandler coderHandler, IDecoderHandler decoderHandler, IProcessHandler processHandler){
 		// 设置端口
-		this.port = PropertiesTool.getPropertyToInt(PORT);// 从配置中获取端口号
+		this.port = MqttTool.getPropertyToInt(PORT);// 从配置中获取端口号
 		if(this.port == null){
 			this.port = 8088;// 设置默认端口为8088
 		}
 		
 		// 设置sockect数据接收缓冲区大小
-		Integer receiveBuffer = PropertiesTool.getPropertyToInt(SOCKECT_RECVEID_BUFFER_SIZE);
+		Integer receiveBuffer = MqttTool.getPropertyToInt(SOCKECT_RECVEID_BUFFER_SIZE);
 		if(receiveBuffer != null){
 			this.sockectReceiveBufferSize = receiveBuffer;
 		}
 		
 		// 设置sockect数据读取缓冲区大小
-		Integer sendBuffer = PropertiesTool.getPropertyToInt(SOCKECT_SEND_BUFFER_SIZE);
+		Integer sendBuffer = MqttTool.getPropertyToInt(SOCKECT_SEND_BUFFER_SIZE);
 		if(sendBuffer != null){
 			this.sockectSendBufferSize = sendBuffer;
 		}

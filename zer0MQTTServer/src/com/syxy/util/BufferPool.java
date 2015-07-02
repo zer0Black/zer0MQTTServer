@@ -30,19 +30,19 @@ public class BufferPool{
 	
 	static{
 		// 设置缓冲区池上限大小
-		Integer maxSize = PropertiesTool.getPropertyToInt(MAX_BUFFER_POOL_SIZE);// 获取配置中的线程优先级
+		Integer maxSize = MqttTool.getPropertyToInt(MAX_BUFFER_POOL_SIZE);// 获取配置中的线程优先级
 		if(maxSize != null){
 			maxBufferPoolSize = maxSize;
 		}
 		
 		// 设置缓冲区池下限大小
-		Integer minSize = PropertiesTool.getPropertyToInt(MIN_BUFFER_POOL_SIZE);// 获取配置中的线程优先级
+		Integer minSize = MqttTool.getPropertyToInt(MIN_BUFFER_POOL_SIZE);// 获取配置中的线程优先级
 		if(minSize != null){
 			minBufferPoolSize = minSize;
 		}
 		
 		// 设置响应缓冲区大小
-		Integer bufferSize = PropertiesTool.getPropertyToInt(WRITE_BUFFER);
+		Integer bufferSize = MqttTool.getPropertyToInt(WRITE_BUFFER);
 		if(bufferSize != null){
 			writeBufferSize = bufferSize;
 		}

@@ -12,9 +12,9 @@ import org.apache.log4j.Logger;
  * <li>创建日期 2015-2-19
  */
 
-public class PropertiesTool {
+public class MqttTool {
 	
-	private final static Logger Log = Logger.getLogger(PropertiesTool.class);
+	private final static Logger Log = Logger.getLogger(MqttTool.class);
 	
 	private static Properties props = new Properties();
 	//配置文件路径
