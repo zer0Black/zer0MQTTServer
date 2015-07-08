@@ -5,6 +5,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import sun.rmi.runtime.Log;
 
@@ -31,11 +33,9 @@ public class StringTool {
 		if(str.trim().length()<1){
 			return true;
 		}
-		
 		if(str.trim().equals("")){
 			return true;
 		}
-		
 		if(str.trim().toLowerCase().equals("null")){
 			return true;
 		}
@@ -65,14 +65,14 @@ public class StringTool {
 	}
 	
 	/**
-	 * <li>方法名 getRandomString
+	 * <li>方法名 generalRandomString
 	 * <li>@param length
-	 * <li>返回类型 length
+	 * <li>返回类型 String
 	 * <li>说明 随机生成字符串
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-3-7
 	 */
-	 public static String getRandomString(int length){
+	 public static String generalRandomString(int length){
 	     String str="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	     Random random=new Random();
 	     StringBuffer sb=new StringBuffer();
@@ -82,5 +82,51 @@ public class StringTool {
 	     }
 	     return sb.toString();
 	 }
+	 
+	 /**
+		 * <li>方法名 generalMacString
+		 * <li>返回类型 String
+		 * <li>说明 随机一个mac地址
+		 * <li>作者 zer0
+		 * <li>创建日期 2015-7-7
+	     */
+	 public static String generalMacString(){
+		 String str = "ABCDEF0123456789";
+		 Random random = new Random();
+		 StringBuffer sb = new StringBuffer();
+		 int macGroupSize = 6;//mac地址长度为6组16进制
+		 int macOneGroup = 2;//一组有两个字符
+		 for (int i = 0; i < macGroupSize; i++) {
+			 for (int j = 0; j < macOneGroup; j++) {
+					int number = random.nextInt(16);
+					sb.append(str.charAt(number));
+			}
+		    sb.append("-");
+		}
+		String macString = sb.toString().substring(0, sb.length()-1);
+		return macString;
+	 }
+	 
+	 /**
+		 * <li>方法名 isMacString
+		 * <li>返回类型 boolean
+		 * <li>说明 判断字符串是否为mac地址
+		 * <li>作者 zer0
+		 * <li>创建日期 2015-7-7
+	     */
+	 public static boolean isMacString(String str){
+		 String pattern = "^([A-Fa-f\\d]{2}[-:])([A-Fa-f\\d]{2}[-:]){4}([A-Fa-f\\d]{2})$";
+		 Pattern pat = Pattern.compile(pattern); 
+		 Matcher mat = pat.matcher(str);
+		 Boolean isFind = mat.find();
+		 if (isFind) {
+			return true;
+		}else {
+			return false;
+		}
+	 }
 	
+//	 public static void main(String[] args){
+//		 
+//	 } 
 }

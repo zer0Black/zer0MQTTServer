@@ -105,29 +105,40 @@ public class ProtocolProcess {
 		//首先查看保留位是否为0，不为0则断开连接,协议P24
 		if (!connectMessage.isReservedIsZero()) {
 			client.close();
+			return;
 		}
 		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0，协议P24,P32
 		if (!connectMessage.getProtocolName().equals("MQTT") || connectMessage.getProtocolVersionNumber() != 4 ) {
 			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
 			client.close();//版本或协议名不匹配，则断开该客户端连接
+			return;
 		}
+		
 		//处理clientID为null或长度为0的情况，协议P29
 		if (connectMessage.getClientId() == null || connectMessage.getClientId().length() == 0) {
-			//clientID为null的时候，cleanSession只能为1,此时给client设置一个23位的ID，否则，断开连接
+			//clientID为null的时候，cleanSession只能为1,此时给client设置一个随即的mac地址为ID，否则，断开连接
 			if (connectMessage.isCleanSession()) {
-				connectMessage.setClientId(StringTool.getRandomString(23));
+//				connectMessage.setClientId(StringTool.generalRandomString(23));
+				connectMessage.setClientId(StringTool.generalMacString());
 			} else {
 				Log.info("客户端ID为空，cleanSession为0，根据协议，不接收此客户端");
 				client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
 				client.close();
+				return;
 			}
+		}
+		
+		//检查clientID的格式符合与否
+		if (!StringTool.isMacString(connectMessage.getClientId())) {
+			Log.info("客户端ID为{"+connectMessage.getClientId()+"}，拒绝此客户端");
+			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+			client.close();
+			return;
 		}
 		
 		//如果会话中已经存储了这个新连接的ID，就关闭之前的clientID
 		if (clients.containsKey(connectMessage.getClientId())) {
 			Log.error("客户端ID{"+connectMessage.getClientId()+"}已存在，强制关闭老连接");
-//			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
-//			client.close();
 			ClientSession oldClientSession = clients.get(connectMessage.getClientId()).getClient();
 			boolean cleanSession = (Boolean)oldClientSession.getAttributesKeys(Constant.CLEAN_SESSION); 
 			if (cleanSession) {
@@ -167,6 +178,7 @@ public class ProtocolProcess {
 			if (!authenticator.checkValid(userName, pwd)) {
 				ConnAckMessage badAckMessage = new ConnAckMessage(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, 0);
 				client.writeMsgToReqClient(badAckMessage);
+				return;
 			}
 		}
 		

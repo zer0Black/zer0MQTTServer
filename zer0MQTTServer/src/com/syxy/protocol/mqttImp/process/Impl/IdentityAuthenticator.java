@@ -1,5 +1,10 @@
 package com.syxy.protocol.mqttImp.process.Impl;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+import com.alibaba.druid.pool.DruidPooledConnection;
+import com.syxy.protocol.mqttImp.process.Impl.dataHandler.DBConnection;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 
 /**
@@ -11,9 +16,32 @@ public class IdentityAuthenticator implements IAuthenticator {
 
 	@Override
 	public boolean checkValid(String username, String password) {
-		// TODO Auto-generated method stub
 		//该处连接数据库，到数据库查询是否有该用户，有则通过验证
-		return true;
+		int ret=0;
+		DruidPooledConnection conn=null;
+		PreparedStatement statement = null;
+		ResultSet resultSet=null;
+		try {
+			conn=DBConnection.getInstance().openConnection();
+			String sqlString="select * from zer0_user where username=? and password=?";
+			statement = conn.prepareStatement(sqlString);
+			statement.setString(1, username);
+			statement.setString(2, password);
+			resultSet=statement.executeQuery();
+			while (resultSet.next()) {
+				ret=1;
+				break;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}finally{
+			DBConnection.getInstance().closeConnection(conn, statement, resultSet);
+		}
+		if (ret == 1) {
+			return true;
+		}else {
+			return false;
+		}
 	}
 
 }
