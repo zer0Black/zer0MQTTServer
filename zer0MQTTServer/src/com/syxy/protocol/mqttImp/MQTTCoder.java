@@ -6,14 +6,8 @@ import java.nio.ByteBuffer;
 import org.apache.log4j.Logger;
 
 import com.syxy.protocol.ICoderHandler;
-import com.syxy.protocol.mqttImp.message.ConnAckMessage;
-import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.protocol.mqttImp.message.PubAckMessage;
-import com.syxy.protocol.mqttImp.message.PublishMessage;
-import com.syxy.server.ClientSession;
-import com.syxy.util.coderTool;
 
 /**
  * <li>说明 MQTT协议编码

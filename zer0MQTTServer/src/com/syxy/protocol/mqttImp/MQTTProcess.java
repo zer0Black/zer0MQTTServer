@@ -1,7 +1,6 @@
 package com.syxy.protocol.mqttImp;
 
 import com.syxy.protocol.IProcessHandler;
-import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.DisconnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
