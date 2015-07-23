@@ -66,4 +66,8 @@ public class Subscription{
 		return clientID;
 	}
  
+    @Override
+    public String toString() {
+        return String.format("[filter:%s, cliID: %s, qos: %s, active: %s]", this.topicFilter, this.clientID, this.requestedQos, this.active);
+    }
 }

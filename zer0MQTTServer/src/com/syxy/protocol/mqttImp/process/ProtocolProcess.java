@@ -291,7 +291,6 @@ public class ProtocolProcess {
 		//发送该publish消息时候，按此流程： 存储消息→发送给所有人→等待pubAck到来→删除消息
 		if (qos == QoS.AT_LEAST_ONCE) {
 			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
-			
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
 			messagesStore.storeTempMessageForPublish(publishKey, storePubEvent);
@@ -305,7 +304,7 @@ public class ProtocolProcess {
 		if (qos == QoS.EXACTLY_ONCE) {
 			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
 			
-			messagesStore.storePackgeID(clientID, packgeID);
+			messagesStore.storePublicPackgeID(clientID, packgeID);
 			
 			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
 			messagesStore.storeTempMessageForPublish(publishKey, pubEvent);
@@ -332,10 +331,11 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-21
 	 */
-	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){
+	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){		
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
-		 messagesStore.removeTempMessageForPublish(clientID, packgeID);
+		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 messagesStore.removeTempMessageForPublish(publishKey);
 	}
 	
 	/**
@@ -350,9 +350,10 @@ public class ProtocolProcess {
 	public void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubRecMessage.getPackgeID();
-		 messagesStore.removeTempMessageForPublish(clientID, packgeID);
+		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 messagesStore.removeTempMessageForPublish(publishKey);
 		 //此处须额外处理，根据不同的事件，处理不同的包ID
-		 messagesStore.storePackgeID(clientID, packgeID);
+		 messagesStore.storePubRecPackgeID(clientID, packgeID);
 		 //发回PubRel
 		 sendPubRel(clientID, packgeID);
 	}
@@ -371,7 +372,7 @@ public class ProtocolProcess {
 		 //删除的是接收端的包ID
 		 int packgeID = pubRelMessage.getPackgeID();
 		 
-		 messagesStore.removePackgeID(clientID);
+		 messagesStore.removePublicPackgeID(clientID);
 		 sendPubComp(clientID, packgeID);
 	}
 	
@@ -387,7 +388,7 @@ public class ProtocolProcess {
 	public void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 //删除存储的PubRec包ID
-		 messagesStore.removePackgeID(clientID);
+		 messagesStore.removePubRecPackgeID(clientID);
 	}
 	
 	/**
@@ -576,6 +577,11 @@ public class ProtocolProcess {
 			
 			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
 				publishMessage.setPackgeID(packgeID);
+			}
+			
+			if (!sub.isCleanSession()) {
+				 PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientID(), packgeID != null ? packgeID : 0);
+                 messagesStore.storeMessageToSessionForPublish(newPublishEvt);
 			}
 			
 			if (this.clients == null) {

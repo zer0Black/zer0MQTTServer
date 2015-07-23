@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp.process.Interface;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -13,6 +14,30 @@ import com.syxy.protocol.mqttImp.process.event.PublishEvent;
  */
 public interface IMessagesStore {
 
+	public static class StoredMessage implements Serializable {
+        final QoS qos;
+        final byte[] payload;
+        final String topic;
+
+        public StoredMessage(byte[] message, QoS qos, String topic) {
+            this.qos = qos;
+            this.payload = message;
+            this.topic = topic;
+        }
+
+        public QoS getQos() {
+            return qos;
+        }
+
+        public byte[] getPayload() {
+			return payload;
+		}
+
+		public String getTopic() {
+            return topic;
+        }
+    }
+	
 	/**
 	 * <li>方法名 listMessagesInSession
 	 * <li>@param clientID
@@ -53,7 +78,28 @@ public interface IMessagesStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void storePackgeID(String clientID, Integer packgeID);
+	void storePublicPackgeID(String clientID, Integer packgeID);
+	
+	/**
+	 * <li>方法名 removePubRecPackgeID
+	 * <li>@param clientID
+	 * <li>返回参数 void
+	 * <li>说明 移除包ID
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-21
+	 */
+	void removePubRecPackgeID(String clientID);
+	
+	/**
+	 * <li>方法名 storePubRecPackgeID
+	 * <li>@param clientID
+	 * <li>@param packgeID
+	 * <li>返回参数 void
+	 * <li>说明 存储包ID
+	 * <li>作者 zer0
+	 * <li>创建日期 2015-05-21
+	 */
+	void storePubRecPackgeID(String clientID, Integer packgeID);
 	
 	/**
 	 * <li>方法名 removePackgeID
@@ -63,7 +109,7 @@ public interface IMessagesStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void removePackgeID(String clientID);
+	void removePublicPackgeID(String clientID);
 	
 	/**
 	 * <li>方法名 storeTempMessageForPublish
@@ -79,13 +125,12 @@ public interface IMessagesStore {
 	/**
 	 * <li>方法名 removeTempMessageForPublish
 	 * <li>@param publishKey
-	 * <li>@param packgeID
 	 * <li>返回参数 void
 	 * <li>说明 删除临时的Publish信息
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void removeTempMessageForPublish(String publishKey, Integer packgeID);
+	void removeTempMessageForPublish(String publishKey);
 	
 	/**
 	 * <li>方法名 storeRetained

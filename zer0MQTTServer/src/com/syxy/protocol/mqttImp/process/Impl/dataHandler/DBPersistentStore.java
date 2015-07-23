@@ -2,12 +2,18 @@ package com.syxy.protocol.mqttImp.process.Impl.dataHandler;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import org.apache.log4j.Logger;
+
+import com.sun.org.apache.bcel.internal.generic.I2D;
+import com.sun.xml.internal.bind.v2.model.core.ID;
 import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.process.ProtocolProcess;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
@@ -20,6 +26,8 @@ import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
  */
 public class DBPersistentStore implements IMessagesStore, ISessionStore {
 
+	private final static Logger Log = Logger.getLogger(DBPersistentStore.class);
+	
 	//为Session保存的的可能需要重发的消息
 	private ConcurrentMap<String, List<PublishEvent>> persistentOfflineMessage = new ConcurrentHashMap<String, List<PublishEvent>>();
 	//为Qos1和Qos2临时保存的消息
@@ -27,7 +35,13 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 	//持久化存储session状态和对应session的token
 	private ConcurrentMap<String, String> persisitentSessionStore = new ConcurrentHashMap<String, String>();
 	//持久化存储session和与之对应的subscription Set
-	private ConcurrentMap<String, Set<Subscription>> persistentSubscriptionStore = new ConcurrentHashMap<String, Set<Subscription>>(); 
+	private ConcurrentMap<String, Set<Subscription>> persistentSubscriptionStore = new ConcurrentHashMap<String, Set<Subscription>>();
+	//持久化的Retain
+	private ConcurrentMap<String, StoredMessage> retainedStore = new ConcurrentHashMap<String, StoredMessage>();
+	//保存publish包ID
+	private ConcurrentMap<String, Integer> publishPackgeIDStore = new ConcurrentHashMap<String, Integer>();
+	//保存pubRec包ID
+	private ConcurrentMap<String, Integer> pubRecPackgeIDStore = new ConcurrentHashMap<String, Integer>();
 	
 	@Override
 	public boolean contains(String clientID) {
@@ -36,20 +50,55 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 
 	@Override
 	public void wipeSubscriptions(String clientID) {
-		// TODO Auto-generated method stub
-
+		persistentSubscriptionStore.remove(clientID);
 	}
 
 	@Override
 	public void addNewSubscription(Subscription newSubscription, String clientID) {
-		// TODO Auto-generated method stub
-
+		Log.info("添加新订阅，订阅:" + newSubscription + ",客户端ID:" + clientID );
+		 if (!persistentSubscriptionStore.containsKey(clientID)) {
+	            Log.info("没客户端ID" + clientID + " , 为它创建订阅集");
+	            persistentSubscriptionStore.put(clientID, new HashSet<Subscription>());
+	        }
+		 
+		 Set<Subscription> subs = persistentSubscriptionStore.get(clientID);
+		  if (!subs.contains(newSubscription)) {
+	            Log.info("更新客户端" + clientID + "的订阅集");
+	            Subscription existingSubscription = null;
+	            //遍历订阅集里所有的订阅，查看是否有相同topic的订阅，有的话，移除之前的订阅，添加新的
+	            for (Subscription scanSub : subs) {
+	                if (newSubscription.getTopicFilter().equals(scanSub.getTopicFilter())) {
+	                    existingSubscription = scanSub;
+	                    break;
+	                }
+	            }
+	            if (existingSubscription != null) {
+	                subs.remove(existingSubscription);
+	            }
+	            subs.add(newSubscription);
+	            persistentSubscriptionStore.put(clientID, subs);
+	            Log.debug("客户端" + clientID + "的订阅集现在是这样的" + subs);
+	        }
 	}
 
 	@Override
 	public void removeSubscription(String topic, String clientID) {
-		// TODO Auto-generated method stub
-
+		Log.info("删除客户端" + clientID + "的" + topic + "订阅");
+		if (!persistentSubscriptionStore.containsKey(clientID)) {
+            Log.debug("没客户端ID" + clientID + " , 无法删除");
+            return;
+        }
+		Set<Subscription> subs = persistentSubscriptionStore.get(clientID);
+		 Subscription existingSubscription = null;
+		for (Subscription subscription : subs) {
+			String topicfilter = subscription.getTopicFilter();
+			if (topicfilter.equals(topic)) {
+				existingSubscription = subscription;
+			}
+		}
+		if (existingSubscription != null) {
+            subs.remove(existingSubscription);
+        }
 	}
 
 	@Override
@@ -85,49 +134,65 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 
 	@Override
 	public void storeMessageToSessionForPublish(PublishEvent pubEvent) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void storePackgeID(String clientID, Integer packgeID) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void removePackgeID(String clientID) {
-		// TODO Auto-generated method stub
-
+		 List<PublishEvent> storedEvents;
+	        String clientID = pubEvent.getClientID();
+	        if (!persistentOfflineMessage.containsKey(clientID)) {
+	            storedEvents = new ArrayList<PublishEvent>();
+	        } else {
+	            storedEvents = persistentOfflineMessage.get(clientID);
+	        }
+	        storedEvents.add(pubEvent);
+	        persistentOfflineMessage.put(clientID, storedEvents);
 	}
 
 	@Override
 	public void storeTempMessageForPublish(String publishKey, PublishEvent pubEvent) {
-		// TODO Auto-generated method stub
-//		persistentQosTempMessage.put
+		persistentQosTempMessage.put(publishKey, pubEvent);
 	}
 
 	@Override
-	public void removeTempMessageForPublish(String clientID, Integer packgeID) {
-		// TODO Auto-generated method stub
-
+	public void removeTempMessageForPublish(String publishKey) {
+		persistentQosTempMessage.remove(publishKey);
 	}
 
 	@Override
 	public void storeRetained(String topic, byte[] message, QoS qos) {
-		// TODO Auto-generated method stub
-
+		if (message.length <= 0) {
+			retainedStore.remove(topic);
+		} else {
+			StoredMessage storedMessage = new StoredMessage(message, qos, topic);
+			retainedStore.put(topic, storedMessage);
+		}	
 	}
 
 	@Override
 	public void cleanRetained(String topic) {
-		// TODO Auto-generated method stub
-
+		retainedStore.remove(topic);
 	}
 
 	@Override
 	public void addSession(String clientID, String token) {
 		persisitentSessionStore.put(clientID, token);
+	}
+
+	@Override
+	public void storePublicPackgeID(String clientID, Integer packgeID) {
+		publishPackgeIDStore.put(clientID, packgeID);
+	}
+
+	@Override
+	public void removePublicPackgeID(String clientID) {
+		publishPackgeIDStore.remove(clientID);
+	}
+
+	@Override
+	public void storePubRecPackgeID(String clientID, Integer packgeID) {
+		pubRecPackgeIDStore.put(clientID, packgeID);
+	}
+	
+	@Override
+	public void removePubRecPackgeID(String clientID) {
+		pubRecPackgeIDStore.remove(clientID);
 	}
 
 }
