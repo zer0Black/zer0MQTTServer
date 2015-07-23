@@ -67,24 +67,25 @@ public interface IMessagesStore {
 	
 	/**
 	 * <li>方法名 storeTempMessageForPublish
+	 * <li>@param publishKey
 	 * <li>@param pubEvent
 	 * <li>返回参数 void
 	 * <li>说明 存储临时的Publish信息
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void storeTempMessageForPublish(PublishEvent pubEvent);
+	void storeTempMessageForPublish(String publishKey, PublishEvent pubEvent);
 	
 	/**
 	 * <li>方法名 removeTempMessageForPublish
-	 * <li>@param clientID
+	 * <li>@param publishKey
 	 * <li>@param packgeID
 	 * <li>返回参数 void
 	 * <li>说明 删除临时的Publish信息
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void removeTempMessageForPublish(String clientID, Integer packgeID);
+	void removeTempMessageForPublish(String publishKey, Integer packgeID);
 	
 	/**
 	 * <li>方法名 storeRetained

@@ -5,9 +5,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import sun.util.logging.resources.logging;
 
+import com.mysql.jdbc.Util;
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
@@ -24,6 +27,7 @@ import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubAckMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
+import com.syxy.protocol.mqttImp.process.Impl.dataHandler.DBPersistentStore;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
@@ -188,6 +192,17 @@ public class ProtocolProcess {
             cleanSession(connectMessage.getClientId());
         }
         
+        //TODO 此处生成一个token(以后每次客户端每次请求服务器，都必须先验证此token正确与否)，并把token保存到本地以及传回给客户端
+        String token = StringTool.generalRandomString(32);
+        sessionStore.addSession(connectMessage.getClientId(), token);
+        //把荷载封装成json字符串
+        JSONObject jsonObject = new JSONObject();
+        try {
+			jsonObject.put("token", token);
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
+        
         //处理回写的CONNACK,并回写，协议P29
         ConnAckMessage okResp = new ConnAckMessage();
         okResp.setStatus(ConnAckMessage.ConnectionStatus.ACCEPTED);
@@ -197,6 +212,7 @@ public class ProtocolProcess {
 		}else{
 			okResp.setSessionPresent(0);
 		}
+        okResp.setPayload(jsonObject.toString());
         client.writeMsgToReqClient(okResp);
         Log.info("CONNACK处理完毕并成功发送");
         Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
@@ -264,6 +280,7 @@ public class ProtocolProcess {
 	 */
 	private void processPublic(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
+		String publishKey = null;
 		
 		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
@@ -273,9 +290,11 @@ public class ProtocolProcess {
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
 		//发送该publish消息时候，按此流程： 存储消息→发送给所有人→等待pubAck到来→删除消息
 		if (qos == QoS.AT_LEAST_ONCE) {
+			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
+			
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
-			messagesStore.storeMessageToSessionForPublish(storePubEvent);
+			messagesStore.storeTempMessageForPublish(publishKey, storePubEvent);
 			sendPublishMessage(topic, qos, message, retain, packgeID);
 			sendPubAck(clientID, packgeID);
 		}
@@ -284,10 +303,12 @@ public class ProtocolProcess {
 		//接收端：publish接收消息→存储包ID→发给其他客户端→发回pubRec→收到pubRel→抛弃第二步存储的包ID→发回pubcomp
 		//发送端：存储消息→发送publish(Qos=2,Dup=0)→收到pubRec→抛弃第一步存储的消息→存储pubRec的包ID→发送pubRel→收到pubcomp→抛弃pubRec包ID的存储
 		if (qos == QoS.EXACTLY_ONCE) {
+			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
+			
 			messagesStore.storePackgeID(clientID, packgeID);
 			
 			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
-			messagesStore.storeTempMessageForPublish(pubEvent);
+			messagesStore.storeTempMessageForPublish(publishKey, pubEvent);
 			sendPublishMessage(topic, qos, message, retain, packgeID);
 			
 			sendPubRec(clientID, packgeID);
@@ -314,7 +335,7 @@ public class ProtocolProcess {
 	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
-		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
+		 messagesStore.removeTempMessageForPublish(clientID, packgeID);
 	}
 	
 	/**
