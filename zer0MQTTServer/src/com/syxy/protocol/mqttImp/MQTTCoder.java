@@ -106,7 +106,6 @@ public class MQTTCoder implements ICoderHandler {
 			buffer.put(headerMessage.lengthToBytes(msg));
 			buffer.put(msg.encode());
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}	
 	}
