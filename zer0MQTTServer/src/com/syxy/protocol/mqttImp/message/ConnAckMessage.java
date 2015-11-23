@@ -34,7 +34,7 @@ public class ConnAckMessage extends Message {
 	
 	private ConnectionStatus status;//返回给客户端的状态码
 	private int sessionPresent;//sessionPresent是告知客户端服务器是否存储了session的位
-	private String payload;//荷载
+//	private String payload;//荷载
 	
 	public ConnAckMessage(){
 		super(Type.CONNACK);
@@ -87,9 +87,9 @@ public class ConnAckMessage extends Message {
 		default:
 			throw new UnsupportedOperationException("CONNACK不支持该状态码 " + status);
 		}
-		if (payload != null) {
-			dos.writeUTF(payload);
-		}
+//		if (payload != null) {
+//			dos.writeUTF(payload);
+//		}
 		dos.flush();
 		
 		//将dos转换为byte[]，然后写入缓冲区
@@ -130,12 +130,12 @@ public class ConnAckMessage extends Message {
 		this.sessionPresent = sessionPresent;
 	}
 
-	public String getPayload() {
-		return payload;
-	}
-
-	public void setPayload(String payload) {
-		this.payload = payload;
-	}
+//	public String getPayload() {
+//		return payload;
+//	}
+//
+//	public void setPayload(String payload) {
+//		this.payload = payload;
+//	}
 
 }

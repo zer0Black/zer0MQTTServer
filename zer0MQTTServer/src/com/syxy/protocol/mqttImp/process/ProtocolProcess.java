@@ -193,15 +193,17 @@ public class ProtocolProcess {
         }
         
         //TODO 此处生成一个token(以后每次客户端每次请求服务器，都必须先验证此token正确与否)，并把token保存到本地以及传回给客户端
-        String token = StringTool.generalRandomString(32);
-        sessionStore.addSession(connectMessage.getClientId(), token);
-        //把荷载封装成json字符串
-        JSONObject jsonObject = new JSONObject();
-        try {
-			jsonObject.put("token", token);
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
+        //鉴权获取不应该在这里做
+        
+//        String token = StringTool.generalRandomString(32);
+//        sessionStore.addSession(connectMessage.getClientId(), token);
+//        //把荷载封装成json字符串
+//        JSONObject jsonObject = new JSONObject();
+//        try {
+//			jsonObject.put("token", token);
+//		} catch (JSONException e) {
+//			e.printStackTrace();
+//		}
         
         //处理回写的CONNACK,并回写，协议P29
         ConnAckMessage okResp = new ConnAckMessage();
@@ -212,7 +214,7 @@ public class ProtocolProcess {
 		}else{
 			okResp.setSessionPresent(0);
 		}
-        okResp.setPayload(jsonObject.toString());
+//        okResp.setPayload(jsonObject.toString());
         client.writeMsgToReqClient(okResp);
         Log.info("CONNACK处理完毕并成功发送");
         Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
