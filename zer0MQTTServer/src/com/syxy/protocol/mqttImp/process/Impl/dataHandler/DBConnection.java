@@ -1,13 +1,10 @@
 package com.syxy.protocol.mqttImp.process.Impl.dataHandler;
 
 import java.io.FileInputStream;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-
-import javax.sql.DataSource;
 
 import com.alibaba.druid.pool.DruidDataSource;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
