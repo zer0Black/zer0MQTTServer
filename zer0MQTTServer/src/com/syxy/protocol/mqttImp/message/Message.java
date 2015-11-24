@@ -176,18 +176,18 @@ public abstract class Message {
 		this.headerMessage = headerMessage;
 	}
 	
-//	public boolean isDup() {
-//		return headerMessage.dup;
-//	}
-//
-//	public void setDup(boolean dup) {
-//		this.headerMessage.dup = dup;
-//	}
-//
+	public boolean isDup() {
+		return headerMessage.dup;
+	}
+
+	public void setDup(boolean dup) {
+		this.headerMessage.dup = dup;
+	}
+
 	public QoS getQos() {
 		return headerMessage.qos;
 	}
-//
+
 	public void setQos(QoS qos) {
 		this.headerMessage.qos = qos;
 	}

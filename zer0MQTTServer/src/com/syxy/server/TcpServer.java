@@ -47,7 +47,7 @@ public class TcpServer {
 	private IProcessHandler processHandler;// 业务处理器
 	
 	ReadHandlerThread readHandlerThread;
-	
+	private static TcpServer INSTANCE;
 //	private ConcurrentHashMap<Object, ClientSession> clients = new ConcurrentHashMap<Object, ClientSession>();// 客户端链接映射表
 	
 	private volatile Integer port;//服务器端口
@@ -82,6 +82,13 @@ public class TcpServer {
 		readHandlerThread = new ReadHandlerThread();
 		this.startMonitor();
 	}
+	
+	public static TcpServer getInstance(ICoderHandler coderHandler, IDecoderHandler decoderHandler, IProcessHandler processHandler) {
+        if (INSTANCE == null) {
+            INSTANCE = new TcpServer(coderHandler, decoderHandler, processHandler);
+        }
+        return INSTANCE;
+    }
 	
 	/**
 	 * <li>方法名 startServer
@@ -182,6 +189,30 @@ public class TcpServer {
 
 	public void setReadHandlerThread(ReadHandlerThread readHandlerThread) {
 		this.readHandlerThread = readHandlerThread;
+	}
+
+	public ICoderHandler getCoderHandler() {
+		return coderHandler;
+	}
+
+	public void setCoderHandler(ICoderHandler coderHandler) {
+		this.coderHandler = coderHandler;
+	}
+
+	public IDecoderHandler getDecoderHandler() {
+		return decoderHandler;
+	}
+
+	public void setDecoderHandler(IDecoderHandler decoderHandler) {
+		this.decoderHandler = decoderHandler;
+	}
+
+	public IProcessHandler getProcessHandler() {
+		return processHandler;
+	}
+
+	public void setProcessHandler(IProcessHandler processHandler) {
+		this.processHandler = processHandler;
 	}
 
 }

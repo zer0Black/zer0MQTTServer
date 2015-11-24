@@ -238,7 +238,6 @@ public class ProtocolProcess {
 	    final byte[] message = publishMessage.getData();
 	    boolean retain = publishMessage.isRetain();
 	    final int packgeID = publishMessage.getPackgeID();
-	    Log.info("收到的荷载为"+message.toString());
 	    processPublic(clientID, topic, qos, message, retain, packgeID);
 	}
 	
@@ -279,9 +278,10 @@ public class ProtocolProcess {
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
 		String publishKey = null;
 		
-		//根据协议P52，qos=0，则把消息发送给所有注册的客户端即可
+		//根据协议P52，qos=0, Dup=0, 则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
-			sendPublishMessage(topic, qos, message, retain, packgeID);
+			boolean dup = false;
+			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 		}
 		
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
@@ -291,7 +291,8 @@ public class ProtocolProcess {
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
 			messagesStore.storeTempMessageForPublish(publishKey, storePubEvent);
-			sendPublishMessage(topic, qos, message, retain, packgeID);
+			boolean dup = false;
+			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			sendPubAck(clientID, packgeID);
 		}
 		
@@ -305,7 +306,8 @@ public class ProtocolProcess {
 			
 			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
 			messagesStore.storeTempMessageForPublish(publishKey, pubEvent);
-			sendPublishMessage(topic, qos, message, retain, packgeID);
+			boolean dup = false;
+			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			
 			sendPubRec(clientID, packgeID);
 		}
@@ -533,12 +535,14 @@ public class ProtocolProcess {
 		
 		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
 		for (PublishEvent pubEvent : publishedEvents) {
+			boolean dup = true;
 			sendPublishMessage(pubEvent.getClientID(), 
 							   pubEvent.getTopic(), 
 							   pubEvent.getQos(), 
 							   pubEvent.getMessage(), 
 							   pubEvent.isRetain(), 
-							   pubEvent.getPackgeID());
+							   pubEvent.getPackgeID(),
+							   dup);
 			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
 		}
 	}
@@ -555,7 +559,7 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
 		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
@@ -571,6 +575,7 @@ public class ProtocolProcess {
 			publishMessage.setTopic(topic);
 			publishMessage.setQos(qos);
 			publishMessage.setData(message);
+			publishMessage.setDup(dup);
 			
 			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
 				publishMessage.setPackgeID(packgeID);
@@ -605,12 +610,13 @@ public class ProtocolProcess {
 	 * <li>@param message
 	 * <li>@param retain
 	 * <li>@param PackgeID
+	 * <li>@param dup
 	 * <li>返回类型 void
 	 * <li>说明 发送publish消息给指定客户端
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
 		Log.info("发送pulicMessage给指定客户端");
 			
 		PublishMessage publishMessage = new PublishMessage();
@@ -618,6 +624,7 @@ public class ProtocolProcess {
 		publishMessage.setTopic(topic);
 		publishMessage.setQos(qos);
 		publishMessage.setData(message);
+		publishMessage.setDup(dup);
 		
 		if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
 			publishMessage.setPackgeID(packgeID);

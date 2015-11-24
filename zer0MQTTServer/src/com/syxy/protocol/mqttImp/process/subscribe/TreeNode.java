@@ -133,9 +133,10 @@ public class TreeNode {
 		}
     	
     	for (TreeNode n : children) {
-    		if (n.getToken().name == t.name) {
+    		System.out.println(n.getToken().name);
+    		if (n.getToken().name.equals(t.name)) {
 				n.getSubscription(new LinkedBlockingDeque<Token>(tokens), matchingSubs);
-			}			
+			}
 		}
     }
     

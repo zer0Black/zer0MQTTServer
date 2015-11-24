@@ -30,35 +30,35 @@ public class MQTTClientTest extends JFrame {
     private MqttMessage message;  
   
     private String myTopic = "test/topic";  
+    String clientMac = "d3-af-23-f2-aa-2d";
   
     public MQTTClientTest() {  
   
         try {  
-            client = new MqttClient(host, "d4-af-23-f2-aa-2d",  
-                    new MemoryPersistence());  
-            connect();  
-        } catch (Exception e) {  
+            client = new MqttClient(host, clientMac, new MemoryPersistence());  
+            connect();
+            client.subscribe(myTopic, 1);
+        } catch (Exception e) { 
             e.printStackTrace();  
-        }  
+        }
   
         Container container = this.getContentPane();  
         panel = new JPanel();  
-        button = new JButton("pulish");  
+        button = new JButton(clientMac);  
         button.addActionListener(new ActionListener() {  
 
             public void actionPerformed(ActionEvent ae) {  
-                try {  
+                try { 
                     MqttDeliveryToken token = topic.publish(message);  
                     token.waitForCompletion();  
                     System.out.println(token.isComplete()+"========");  
                 } catch (Exception e) {  
                     e.printStackTrace();  
                 }  
-            }  
+            } 
         });  
         panel.add(button);  
         container.add(panel, "North");  
-  
     }  
   
     private void connect() {  
@@ -83,19 +83,21 @@ public class MQTTClientTest extends JFrame {
                 public void messageArrived(String topic, MqttMessage arg1)  
                         throws Exception {  
                     System.out.println("messageArrived----------");  
+                    System.out.println(topic+":"+arg1.toString());
   
                 }  
             });  
-  
+            
+            
             topic = client.getTopic(myTopic);  
-  
+            
             message = new MqttMessage();  
             message.setQos(1);  
             message.setRetained(true);  
             System.out.println(message.isRetained()+"------ratained״̬");  
             message.setPayload("eeeeeaaaaaawwwwww---".getBytes());  
   
-            client.connect(options);  
+            client.connect(options); 
         } catch (Exception e) {  
             e.printStackTrace();  
         }  

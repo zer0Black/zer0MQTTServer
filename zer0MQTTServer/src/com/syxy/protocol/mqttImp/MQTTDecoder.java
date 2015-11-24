@@ -12,6 +12,7 @@ import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
+import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 
 /**
  * <li>说明 MQTT协议解码
@@ -55,8 +56,8 @@ public class MQTTDecoder implements IDecoderHandler {
 
 					break;
 				case SUBSCRIBE:
-
-					break;
+					msg = new SubscribeMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case SUBACK:
 
 					break;

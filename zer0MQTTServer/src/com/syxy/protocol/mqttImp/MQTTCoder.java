@@ -46,7 +46,13 @@ public class MQTTCoder implements ICoderHandler {
 			encoder(msg, headerMessage, byteBuffer);
 			return byteBuffer;
 		case PUBLISH:
-//			headerMessage = new HeaderMessage(Type.PUBLISH, false, QoS.AT_MOST_ONCE, false);
+			QoS qos = msg.getQos();
+			if (qos == null) {
+				qos = QoS.AT_MOST_ONCE;
+			}
+			boolean dup = msg.isDup();
+			boolean retain = msg.isRetain();
+			headerMessage = new HeaderMessage(Type.PUBLISH, dup, qos, retain);
 			encoder(msg, headerMessage, byteBuffer);
 			break;
 		case PUBACK:

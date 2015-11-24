@@ -1,6 +1,5 @@
 package com.syxy.protocol.mqttImp.process.event;
 
-import com.sun.corba.se.impl.ior.ByteBuffer;
 import com.syxy.protocol.mqttImp.QoS;
 
 /**
@@ -75,5 +74,5 @@ public class PublishEvent {
 	public void setPackgeID(int packgeID) {
 		this.packgeID = packgeID;
 	}
-	
+
 }

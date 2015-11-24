@@ -13,7 +13,7 @@ import com.syxy.protocol.mqttImp.MQTTProcess;
 public class StartServer {
 	
 	public static void main(String[] args){
-		new TcpServer(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
+		TcpServer.getInstance(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
 		while(true){
 			try {
 				Thread.sleep(100000);

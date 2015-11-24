@@ -103,7 +103,7 @@ public class SubscribeStore {
 		try {
 			tokens = parseTopic(topic);
 		} catch (ParseException e) {
-			return Collections.EMPTY_LIST;
+			return Collections.emptyList();
 		}
 		Queue<Token> tokenQueue = new LinkedBlockingDeque<Token>(tokens);
 		List<Subscription> matchingSubs = new ArrayList<Subscription>();

@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import com.syxy.protocol.mqttImp.QoS;
@@ -13,7 +14,7 @@ import com.syxy.server.ClientSession;
 
 public class SubAckMessage extends Message {
 
-	private List<QoS> grantedQoSs;
+	private List<QoS> grantedQoSs = new ArrayList<QoS>();
 	
 	public SubAckMessage(){
 		super(Type.SUBACK);

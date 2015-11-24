@@ -43,7 +43,7 @@ public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketCha
 //			client.setIndex(index);// 设置索引
 //			attachment.getClients().put(index, client);// 放入到连接中
 			
-			client.registeHandler(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess());
+			client.registeHandler(attachment.getCoderHandler(), attachment.getDecoderHandler(), attachment.getProcessHandler());
 			
 			//建立连接以后开启读事件
 			client.readEvent();
