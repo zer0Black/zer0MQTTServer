@@ -105,7 +105,7 @@ public class MQTTClientTest extends JFrame {
     }  
   
     public static void main(String[] args) {  
-    	MQTTClientTest s = new MQTTClientTest();  
+    	MQTTClientTest s = new MQTTClientTest(); 
         s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
         s.setSize(600, 370);  
         s.setLocationRelativeTo(null);  
