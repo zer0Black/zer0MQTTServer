@@ -7,5 +7,9 @@
 	<classpathentry exported="true" kind="lib" path="zer0MQTTServer/lib/druid-1.0.9.jar"/>
 	<classpathentry kind="lib" path="zer0MQTTServer/lib/json.jar"/>
 	<classpathentry kind="lib" path="zer0MQTTServer/lib/mysql-connector-java-5.0.4-bin.jar"/>
+	<classpathentry kind="lib" path="zer0MQTTServer/lib/quartz-2.2.2.jar"/>
+	<classpathentry kind="lib" path="zer0MQTTServer/lib/quartz-jobs-2.2.2.jar"/>
+	<classpathentry kind="lib" path="zer0MQTTServer/lib/slf4j-api-1.7.7.jar"/>
+	<classpathentry kind="lib" path="zer0MQTTServer/lib/slf4j-log4j12-1.7.7.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
