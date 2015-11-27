@@ -3,9 +3,11 @@ package com.syxy.protocol.mqttImp.process.event;
 import com.syxy.protocol.mqttImp.QoS;
 
 /**
- * <li>说明 发送消息的事件类，把协议的处理当做事件来进行就可以很好的进行封装
- * <li>作者 zer0
- * <li>创建日期 2015-05-11
+ *  发送消息的事件类，把协议的处理当做事件来进行就可以很好的进行封装
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-05-11
  */
 public class PublishEvent {
 	String topic;

@@ -11,5 +11,6 @@
 	<classpathentry kind="lib" path="zer0MQTTServer/lib/quartz-jobs-2.2.2.jar"/>
 	<classpathentry kind="lib" path="zer0MQTTServer/lib/slf4j-api-1.7.7.jar"/>
 	<classpathentry kind="lib" path="zer0MQTTServer/lib/slf4j-log4j12-1.7.7.jar"/>
+	<classpathentry kind="lib" path="zer0MQTTServer/lib/mapdb-1.0.8.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -2,6 +2,7 @@ package com.syxy.protocol.mqttImp.process.Interface;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
+import java.util.Collection;
 import java.util.List;
 
 import com.syxy.protocol.mqttImp.QoS;
@@ -120,37 +121,60 @@ public interface IMessagesStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-21
 	 */
-	void storeTempMessageForPublish(String publishKey, PublishEvent pubEvent);
-	
 	/**
-	 * <li>方法名 removeTempMessageForPublish
-	 * <li>@param publishKey
-	 * <li>返回参数 void
-	 * <li>说明 删除临时的Publish信息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
+	 * 当Qos>0的时候，临时存储Publish消息，用于重发
+	 * @param publishKey
+	 * @param pubEvent
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
 	 */
-	void removeTempMessageForPublish(String publishKey);
+	void storeQosPublishMessage(String publishKey, PublishEvent pubEvent);
 	
 	/**
-	 * <li>方法名 storeRetained
-	 * <li>@param topic
-	 * <li>@param message
-	 * <li>@param qos
-	 * <li>返回参数 void
-	 * <li>说明 持久化存储保留的信息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-26
+	 * 在收到对应的响应包后，删除Publish消息的临时存储
+	 * @param publishKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
+	 */
+	void removeQosPublishMessage(String publishKey);
+
+	/**
+	 * 获取临时存储的Publish消息，在等待时间过后未收到对应的响应包，则重发该Publish消息
+	 * @param publishKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
+	 */
+	void searchQosPublishMessage(String publishKey);
+	
+	/**
+	 * 持久化存储保留Retain为1的指定topic的最新信息，该信息会在新客户端订阅某主题的时候发送给此客户端
+	 * @param topic
+	 * @param message
+	 * @param qos
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-26
 	 */
     void storeRetained(String topic, byte[] message, QoS qos);
     
     /**
-	 * <li>方法名 cleanRetained
-	 * <li>@param topic
-	 * <li>返回参数 void
-	 * <li>说明 删除持久化存储保留的信息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-26
+	 * 删除指定topic的Retain信息
+	 * @param topic
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-26
 	 */
     void cleanRetained(String topic);
+    
+    /**
+	 * 从Retain中搜索对应topic中保存的信息
+	 * @param topic
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-27
+	 */
+    Collection<StoredMessage> searchRetained(String topic);
 }

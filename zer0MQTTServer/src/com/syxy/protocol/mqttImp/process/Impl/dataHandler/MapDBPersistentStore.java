@@ -1,6 +1,7 @@
 package com.syxy.protocol.mqttImp.process.Impl.dataHandler;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -21,9 +22,9 @@ import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
  * <li>作者 zer0
  * <li>创建日期 2015-7-7
  */
-public class DBPersistentStore implements IMessagesStore, ISessionStore {
+public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 
-	private final static Logger Log = Logger.getLogger(DBPersistentStore.class);
+	private final static Logger Log = Logger.getLogger(MapDBPersistentStore.class);
 	
 	//为Session保存的的可能需要重发的消息
 	private ConcurrentMap<String, List<PublishEvent>> persistentOfflineMessage = new ConcurrentHashMap<String, List<PublishEvent>>();
@@ -143,13 +144,18 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 	}
 
 	@Override
-	public void storeTempMessageForPublish(String publishKey, PublishEvent pubEvent) {
+	public void storeQosPublishMessage(String publishKey, PublishEvent pubEvent) {
 		persistentQosTempMessage.put(publishKey, pubEvent);
 	}
 
 	@Override
-	public void removeTempMessageForPublish(String publishKey) {
+	public void removeQosPublishMessage(String publishKey) {
 		persistentQosTempMessage.remove(publishKey);
+	}
+	
+	@Override
+	public void searchQosPublishMessage(String publishKey) {
+		// TODO Auto-generated method stub
 	}
 
 	@Override
@@ -167,6 +173,12 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 		retainedStore.remove(topic);
 	}
 
+	@Override
+	public Collection<StoredMessage> searchRetained(String topic) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 	@Override
 	public void addSession(String clientID, String token) {
 		persisitentSessionStore.put(clientID, token);
@@ -191,5 +203,6 @@ public class DBPersistentStore implements IMessagesStore, ISessionStore {
 	public void removePubRecPackgeID(String clientID) {
 		pubRecPackgeIDStore.remove(clientID);
 	}
+
 
 }

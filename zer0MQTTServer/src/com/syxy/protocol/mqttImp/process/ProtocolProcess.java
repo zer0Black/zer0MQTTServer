@@ -26,6 +26,7 @@ import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
+import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
@@ -290,7 +291,7 @@ public class ProtocolProcess {
 			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
-			messagesStore.storeTempMessageForPublish(publishKey, storePubEvent);
+			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
 			boolean dup = false;
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			sendPubAck(clientID, packgeID);
@@ -305,7 +306,7 @@ public class ProtocolProcess {
 			messagesStore.storePublicPackgeID(clientID, packgeID);
 			
 			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
-			messagesStore.storeTempMessageForPublish(publishKey, pubEvent);
+			messagesStore.storeQosPublishMessage(publishKey, pubEvent);
 			boolean dup = false;
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			
@@ -334,7 +335,7 @@ public class ProtocolProcess {
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
-		 messagesStore.removeTempMessageForPublish(publishKey);
+		 messagesStore.removeQosPublishMessage(publishKey);
 	}
 	
 	/**
@@ -350,10 +351,11 @@ public class ProtocolProcess {
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubRecMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
-		 messagesStore.removeTempMessageForPublish(publishKey);
+		 messagesStore.removeQosPublishMessage(publishKey);
 		 //此处须额外处理，根据不同的事件，处理不同的包ID
 		 messagesStore.storePubRecPackgeID(clientID, packgeID);
-		 //发回PubRel
+		 //组装PubRel事件后，存储PubRel事件，并发回PubRel
+		 PubRelEvent pubRelEvent = new PubRelEvent(clientID, packgeID);
 		 sendPubRel(clientID, packgeID);
 	}
 	
@@ -546,6 +548,30 @@ public class ProtocolProcess {
 			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
 		}
 	}
+	
+//	private void reUnKnowPublishMessage(String publishKey){
+//		//取出需要重发的消息列表
+//		//查看消息列表是否为空，为空则返回
+//		//不为空则依次发送消息并从会话中删除此消息
+//		List<PublishEvent> publishedEvents = messagesStore.(clientID);
+//		if (publishedEvents.isEmpty()) {
+//			Log.info("没有客户端{"+clientID+"}存储的离线消息");
+//			return;
+//		}
+//		
+//		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
+//		for (PublishEvent pubEvent : publishedEvents) {
+//			boolean dup = true;
+//			sendPublishMessage(pubEvent.getClientID(), 
+//							   pubEvent.getTopic(), 
+//							   pubEvent.getQos(), 
+//							   pubEvent.getMessage(), 
+//							   pubEvent.isRetain(), 
+//							   pubEvent.getPackgeID(),
+//							   dup);
+//			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
+//		}
+//	}
 	
 	/**
 	 * <li>方法名 sendPulicMessage

@@ -70,7 +70,7 @@ public class SubscribeStore {
 					childList.add(matchingChildren);
 					childList.addAll(matchingChildren.getAllDescendant());
 				}
-				return childList;		
+				return childList;	
 			}			
 			
 			if ((matchingChildren = current.childWithToken(token)) != null) {
