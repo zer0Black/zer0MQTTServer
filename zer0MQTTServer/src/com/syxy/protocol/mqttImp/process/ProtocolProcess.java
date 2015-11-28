@@ -1,7 +1,11 @@
 package com.syxy.protocol.mqttImp.process;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.processing.Messager;
 
 import org.apache.log4j.Logger;
 import org.json.JSONException;
@@ -28,6 +32,9 @@ import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
+import com.syxy.protocol.mqttImp.process.event.QuartzManager;
+import com.syxy.protocol.mqttImp.process.event.job.RePubRelJob;
+import com.syxy.protocol.mqttImp.process.event.job.RePublishJob;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 import com.syxy.server.ClientSession;
@@ -291,9 +298,19 @@ public class ProtocolProcess {
 			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
-			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
+			
 			boolean dup = false;
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
+			//存临时Publish消息，用于重发
+			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
+			//存离线消息
+			messagesStore.storeMessageToSessionForPublish(storePubEvent);
+			//开启Publish重传任务，在制定时间内未收到PubAck包则重传该条Publish信息
+			Map<String, Object> jobParam = new HashMap<String, Object>();
+			jobParam.put("ProtocolProcess", this);
+			jobParam.put("publishKey", publishKey);
+			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
+					
 			sendPubAck(clientID, packgeID);
 		}
 		
@@ -306,9 +323,17 @@ public class ProtocolProcess {
 			messagesStore.storePublicPackgeID(clientID, packgeID);
 			
 			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
-			messagesStore.storeQosPublishMessage(publishKey, pubEvent);
 			boolean dup = false;
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
+			
+			//存临时Publish消息，用于重发
+			messagesStore.storeQosPublishMessage(publishKey, pubEvent);
+			//存离线消息
+			messagesStore.storeMessageToSessionForPublish(pubEvent);
+			Map<String, Object> jobParam = new HashMap<String, Object>();
+			jobParam.put("ProtocolProcess", this);
+			jobParam.put("publishKey", publishKey);
+			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
 			
 			sendPubRec(clientID, packgeID);
 		}
@@ -335,7 +360,12 @@ public class ProtocolProcess {
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 //取消Publish重传任务
+		 QuartzManager.removeJob(publishKey, publishKey, publishKey, publishKey);
+		 //删除临时存储用于重发的Publish消息
 		 messagesStore.removeQosPublishMessage(publishKey);
+		 //删除离线消息
+		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
 	}
 	
 	/**
@@ -351,12 +381,25 @@ public class ProtocolProcess {
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubRecMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 
+		 //取消Publish重传任务,同时删除对应的值
+		 QuartzManager.removeJob(publishKey, publishKey, publishKey, publishKey);
 		 messagesStore.removeQosPublishMessage(publishKey);
+		 //删除离线消息
+		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
 		 //此处须额外处理，根据不同的事件，处理不同的包ID
 		 messagesStore.storePubRecPackgeID(clientID, packgeID);
 		 //组装PubRel事件后，存储PubRel事件，并发回PubRel
 		 PubRelEvent pubRelEvent = new PubRelEvent(clientID, packgeID);
+		 //此处的Key和Publish的key一致
+		 messagesStore.storePubRelMessage(publishKey, pubRelEvent);
+		 //发回PubRel
 		 sendPubRel(clientID, packgeID);
+		 //开启PubRel重传事件
+		 Map<String, Object> jobParam = new HashMap<String, Object>();
+		 jobParam.put("ProtocolProcess", this);
+		 jobParam.put("pubRelKey", publishKey);
+		 QuartzManager.addJob(publishKey, "pubRel", publishKey, "pubRel", RePubRelJob.class, 10, jobParam);
 	}
 	
 	/**
@@ -388,8 +431,13 @@ public class ProtocolProcess {
 	 */
 	public void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		 int packageID = pubcompMessage.getPackgeID();
+		 String pubRelkey = String.format("%s%d", clientID, packageID);
+		 
 		 //删除存储的PubRec包ID
 		 messagesStore.removePubRecPackgeID(clientID);
+		 //取消PubRel的重传任务，删除临时存储的PubRel事件
+		 messagesStore.removePubRelMessage(pubRelkey);
 	}
 	
 	/**
@@ -549,29 +597,40 @@ public class ProtocolProcess {
 		}
 	}
 	
-//	private void reUnKnowPublishMessage(String publishKey){
-//		//取出需要重发的消息列表
-//		//查看消息列表是否为空，为空则返回
-//		//不为空则依次发送消息并从会话中删除此消息
-//		List<PublishEvent> publishedEvents = messagesStore.(clientID);
-//		if (publishedEvents.isEmpty()) {
-//			Log.info("没有客户端{"+clientID+"}存储的离线消息");
-//			return;
-//		}
-//		
-//		Log.info("重发客户端{"+ clientID +"}存储的离线消息");
-//		for (PublishEvent pubEvent : publishedEvents) {
-//			boolean dup = true;
-//			sendPublishMessage(pubEvent.getClientID(), 
-//							   pubEvent.getTopic(), 
-//							   pubEvent.getQos(), 
-//							   pubEvent.getMessage(), 
-//							   pubEvent.isRetain(), 
-//							   pubEvent.getPackgeID(),
-//							   dup);
-//			messagesStore.removeMessageInSessionForPublish(clientID, pubEvent.getPackgeID());
-//		}
-//	}
+	/**
+	 * 在未收到对应包的情况下，重传Publish消息
+	 * @param publishKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-28
+	 */
+	public void reUnKnowPublishMessage(String publishKey){
+		PublishEvent pubEvent = messagesStore.searchQosPublishMessage(publishKey);
+		Log.info("重发PublishKey为{"+ publishKey +"}的Publish离线消息");
+		boolean dup = true;
+		sendPublishMessage(pubEvent.getClientID(), 
+						   pubEvent.getTopic(), 
+						   pubEvent.getQos(), 
+						   pubEvent.getMessage(), 
+						   pubEvent.isRetain(), 
+						   pubEvent.getPackgeID(),
+						   dup);
+			messagesStore.removeQosPublishMessage(publishKey);
+	}
+	
+	/**
+	 * 在未收到对应包的情况下，重传PubRel消息
+	 * @param pubRelKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-28
+	 */
+	public void reUnKnowPubRelMessage(String pubRelKey){
+		PubRelEvent pubEvent = messagesStore.searchPubRelMessage(pubRelKey);
+		Log.info("重发PubRelKey为{"+ pubRelKey +"}的PubRel离线消息");
+		sendPubRel(pubEvent.getClientID(), pubEvent.getPackgeID());
+	    messagesStore.removeQosPublishMessage(pubRelKey);
+	}
 	
 	/**
 	 * <li>方法名 sendPulicMessage

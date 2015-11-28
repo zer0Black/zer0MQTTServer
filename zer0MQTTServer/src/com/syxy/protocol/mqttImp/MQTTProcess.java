@@ -14,7 +14,7 @@ import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.ProtocolProcess;
 import com.syxy.protocol.mqttImp.process.Impl.IdentityAuthenticator;
-import com.syxy.protocol.mqttImp.process.Impl.dataHandler.DBPersistentStore;
+import com.syxy.protocol.mqttImp.process.Impl.dataHandler.MapDBPersistentStore;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
@@ -28,7 +28,7 @@ import com.syxy.server.ClientSession;
 
 public class MQTTProcess implements IProcessHandler {
 
-	DBPersistentStore storage = new DBPersistentStore();
+	MapDBPersistentStore storage = new MapDBPersistentStore();
 	IMessagesStore messagesStore = storage;
 	ISessionStore sessionStore = storage;
 	IAuthenticator authenticator = new IdentityAuthenticator();

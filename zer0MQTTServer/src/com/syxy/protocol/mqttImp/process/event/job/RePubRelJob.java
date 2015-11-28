@@ -14,15 +14,15 @@ import com.syxy.protocol.mqttImp.process.ProtocolProcess;
  * @version 1.0
  * @date 2015-11-26
  */
-public class RePublishJob implements Job{
+public class RePubRelJob implements Job{
 	
 	@Override
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		//取出参数，参数为ProtocolProcess，调用此类的函数
 		JobDataMap dataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 		ProtocolProcess process = (ProtocolProcess) dataMap.get("ProtocolProcess");
-		String publishKey = (String) dataMap.get("publishKey");
-		process.reUnKnowPublishMessage(publishKey);
+		String pubRelKey = (String) dataMap.get("pubRelKey");
+		process.reUnKnowPubRelMessage(pubRelKey);
 	}
 	
 }

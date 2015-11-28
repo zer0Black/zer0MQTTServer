@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 
 /**
@@ -16,7 +17,7 @@ import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 public interface IMessagesStore {
 
 	public static class StoredMessage implements Serializable {
-        final QoS qos;
+		final QoS qos;
         final byte[] payload;
         final String topic;
 
@@ -40,87 +41,72 @@ public interface IMessagesStore {
     }
 	
 	/**
-	 * <li>方法名 listMessagesInSession
-	 * <li>@param clientID
-	 * <li>返回参数 List<PublishEvent>
-	 * <li>说明 返回某个clientID的离线消息列表
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-18
+	 * 返回某个clientID的离线消息列表
+	 * @param clientID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-18
 	 */
 	List<PublishEvent> listMessagesInSession(String clientID);
 	
+
 	/**
-	 * <li>方法名 removeMessageInSessionForPublish
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回参数 void
-	 * <li>说明 移除某个publish事件的离线消息，与storeMessageToSessionForPublish对应
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-18
+	 * 在重发以后，移除publish的离线消息事件
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-18
 	 */
 	void removeMessageInSessionForPublish(String clientID, Integer packgeID);
 	
 	/**
-	 * <li>方法名 storeMessageToSessionForPublish
-	 * <li>@param pubEvent
-	 * <li>返回参数 void
-	 * <li>说明 存储publish消息事件，为以后重发做准备,与removeMessageInSessionForPublish对应
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
+	 * 存储publish的离线消息事件，为CleanSession=0的情况做重发准备
+	 * @param pubEvent
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
 	 */
 	void storeMessageToSessionForPublish(PublishEvent pubEvent);
 
 	/**
-	 * <li>方法名 storePackgeID
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回参数 void
-	 * <li>说明 存储包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
+	 * 存储Publish的包ID
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
 	 */
 	void storePublicPackgeID(String clientID, Integer packgeID);
 	
 	/**
-	 * <li>方法名 removePubRecPackgeID
-	 * <li>@param clientID
-	 * <li>返回参数 void
-	 * <li>说明 移除包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
-	 */
-	void removePubRecPackgeID(String clientID);
-	
-	/**
-	 * <li>方法名 storePubRecPackgeID
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回参数 void
-	 * <li>说明 存储包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
-	 */
-	void storePubRecPackgeID(String clientID, Integer packgeID);
-	
-	/**
-	 * <li>方法名 removePackgeID
-	 * <li>@param clientID
-	 * <li>返回参数 void
-	 * <li>说明 移除包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
+	 * 移除Publish的包ID
+	 * @param clientID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
 	 */
 	void removePublicPackgeID(String clientID);
 	
 	/**
-	 * <li>方法名 storeTempMessageForPublish
-	 * <li>@param publishKey
-	 * <li>@param pubEvent
-	 * <li>返回参数 void
-	 * <li>说明 存储临时的Publish信息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-21
+	 * 移除PubRec的包ID
+	 * @param clientID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
 	 */
+	void removePubRecPackgeID(String clientID);
+	
+	/**
+	 * 存储PubRec的包ID
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-05-21
+	 */
+	void storePubRecPackgeID(String clientID, Integer packgeID);
+	
 	/**
 	 * 当Qos>0的时候，临时存储Publish消息，用于重发
 	 * @param publishKey
@@ -145,9 +131,37 @@ public interface IMessagesStore {
 	 * @param publishKey
 	 * @author zer0
 	 * @version 1.0
-	 * @date 2015-05-21
+	 * @date 2015-11-28
 	 */
-	void searchQosPublishMessage(String publishKey);
+	PublishEvent searchQosPublishMessage(String publishKey);
+	
+	/**
+	 * 当Qos=2的时候，临时存储PubRel消息，在未收到PubComp包时用于重发
+	 * @param pubRelKey
+	 * @param pubRelEvent
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-28
+	 */
+	void storePubRelMessage(String pubRelKey, PubRelEvent pubRelEvent);
+	
+	/**
+	 * 在收到对应的响应包后，删除PubRel消息的临时存储
+	 * @param pubRelKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-28
+	 */
+	void removePubRelMessage(String pubRelKey);
+
+	/**
+	 * 获取临时存储的PubRel消息，在等待时间过后未收到对应的响应包，则重发该PubRel消息
+	 * @param pubRelKey
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-28
+	 */
+	PubRelEvent searchPubRelMessage(String pubRelKey);
 	
 	/**
 	 * 持久化存储保留Retain为1的指定topic的最新信息，该信息会在新客户端订阅某主题的时候发送给此客户端

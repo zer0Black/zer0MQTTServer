@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
+import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 
@@ -154,8 +155,27 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	}
 	
 	@Override
-	public void searchQosPublishMessage(String publishKey) {
+	public PublishEvent searchQosPublishMessage(String publishKey) {
+		return persistentQosTempMessage.get(publishKey);
+	}
+	
+	@Override
+	public void storePubRelMessage(String pubRelKey, PubRelEvent pubRelEvent) {
 		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void removePubRelMessage(String pubRelKey) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public PubRelEvent searchPubRelMessage(String pubRelKey) {
+		return null;
+		// TODO Auto-generated method stub
+		
 	}
 
 	@Override
@@ -203,6 +223,5 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	public void removePubRecPackgeID(String clientID) {
 		pubRecPackgeIDStore.remove(clientID);
 	}
-
 
 }
