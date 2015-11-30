@@ -41,6 +41,14 @@ public interface IMessagesStore {
     }
 	
 	/**
+	 * 初始化存储
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-11-30
+	 */
+	void initStore();
+	
+	/**
 	 * 返回某个clientID的离线消息列表
 	 * @param clientID
 	 * @author zer0

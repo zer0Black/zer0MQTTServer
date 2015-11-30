@@ -17,7 +17,7 @@ public interface ISessionStore {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-05-07
 	 */
-	boolean contains(String clientID);
+	boolean searchSubscriptions(String clientID);
 	
 	/**
 	 * <li>方法名 wipeSubscriptions
@@ -51,14 +51,4 @@ public interface ISessionStore {
 	 */
 	void removeSubscription(String topic, String clientID);
 	
-	/**
-	 * <li>方法名 addSession
-	 * <li>@param token
-	 * <li>@param clientID
-	 * <li>返回参数 void
-	 * <li>说明 保存session和与之对应的token到服务器
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-07-09
-	 */
-	void addSession(String clientID, String token);
 }

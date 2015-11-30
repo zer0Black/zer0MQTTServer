@@ -1,15 +1,18 @@
 package com.syxy.protocol.mqttImp.process.Impl.dataHandler;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
+import org.mapdb.DB;
+import org.mapdb.DBMaker;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
@@ -17,6 +20,7 @@ import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
+import com.syxy.util.MqttTool;
 
 /**
  * <li>说明 对数据进行保存，视情况决定是临时保存还是持久化保存
@@ -28,28 +32,51 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	private final static Logger Log = Logger.getLogger(MapDBPersistentStore.class);
 	
 	//为Session保存的的可能需要重发的消息
-	private ConcurrentMap<String, List<PublishEvent>> persistentOfflineMessage = new ConcurrentHashMap<String, List<PublishEvent>>();
+	private ConcurrentMap<String, List<PublishEvent>> persistentOfflineMessage;
 	//为Qos1和Qos2临时保存的消息
-	private ConcurrentMap<String, PublishEvent> persistentQosTempMessage = new ConcurrentHashMap<String, PublishEvent>();
-	//持久化存储session状态和对应session的token
-	private ConcurrentMap<String, String> persisitentSessionStore = new ConcurrentHashMap<String, String>();
+	private ConcurrentMap<String, PublishEvent> persistentQosTempMessage;
+	//为Qos2临时保存的PubRel消息
+	private ConcurrentMap<String, PubRelEvent> persistentPubRelTempMessage;
 	//持久化存储session和与之对应的subscription Set
-	private ConcurrentMap<String, Set<Subscription>> persistentSubscriptionStore = new ConcurrentHashMap<String, Set<Subscription>>();
+	private ConcurrentMap<String, Set<Subscription>> persistentSubscriptionStore;
 	//持久化的Retain
-	private ConcurrentMap<String, StoredMessage> retainedStore = new ConcurrentHashMap<String, StoredMessage>();
+	private ConcurrentMap<String, StoredMessage> retainedStore;
 	//保存publish包ID
-	private ConcurrentMap<String, Integer> publishPackgeIDStore = new ConcurrentHashMap<String, Integer>();
+	private ConcurrentMap<String, Integer> publishPackgeIDStore;
 	//保存pubRec包ID
-	private ConcurrentMap<String, Integer> pubRecPackgeIDStore = new ConcurrentHashMap<String, Integer>();
+	private ConcurrentMap<String, Integer> pubRecPackgeIDStore;
+	
+	private DB m_db;
 	
 	@Override
-	public boolean contains(String clientID) {
-		return persisitentSessionStore.containsKey(clientID);
+	public void initStore() {
+		 String STORAGE_FILE_PATH =  System.getProperty("user.home") + File.separator + MqttTool.getProperty("path");
+	     File tmpFile;
+	     try {
+	    	 tmpFile = new File(STORAGE_FILE_PATH);
+	         tmpFile.createNewFile();
+	         m_db = DBMaker.newFileDB(tmpFile).make();
+		     persistentOfflineMessage = m_db.getHashMap("offline");
+		     persistentQosTempMessage = m_db.getHashMap("publishTemp");
+		     persistentPubRelTempMessage = m_db.getHashMap("pubRelTemp");
+		     persistentSubscriptionStore = m_db.getHashMap("subscriptions");
+		     retainedStore = m_db.getHashMap("retained");
+		     publishPackgeIDStore = m_db.getHashMap("publishPID");
+		     pubRecPackgeIDStore = m_db.getHashMap("pubRecPID");
+	     } catch (IOException ex) {
+	         Log.error(null, ex);
+	     }     
+	 }
+	
+	@Override
+	public boolean searchSubscriptions(String clientID) {
+		return persistentSubscriptionStore.containsKey(clientID);
 	}
 
 	@Override
 	public void wipeSubscriptions(String clientID) {
 		persistentSubscriptionStore.remove(clientID);
+		m_db.commit();
 	}
 
 	@Override
@@ -58,10 +85,10 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 		 if (!persistentSubscriptionStore.containsKey(clientID)) {
 	            Log.info("没客户端ID" + clientID + " , 为它创建订阅集");
 	            persistentSubscriptionStore.put(clientID, new HashSet<Subscription>());
-	        }
+	     }
 		 
 		 Set<Subscription> subs = persistentSubscriptionStore.get(clientID);
-		  if (!subs.contains(newSubscription)) {
+		 if (!subs.contains(newSubscription)) {
 	            Log.info("更新客户端" + clientID + "的订阅集");
 	            Subscription existingSubscription = null;
 	            //遍历订阅集里所有的订阅，查看是否有相同topic的订阅，有的话，移除之前的订阅，添加新的
@@ -77,7 +104,8 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	            subs.add(newSubscription);
 	            persistentSubscriptionStore.put(clientID, subs);
 	            Log.debug("客户端" + clientID + "的订阅集现在是这样的" + subs);
-	        }
+	      }
+		  m_db.commit();
 	}
 
 	@Override
@@ -88,7 +116,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
             return;
         }
 		Set<Subscription> subs = persistentSubscriptionStore.get(clientID);
-		 Subscription existingSubscription = null;
+		Subscription existingSubscription = null;
 		for (Subscription subscription : subs) {
 			String topicfilter = subscription.getTopicFilter();
 			if (topicfilter.equals(topic)) {
@@ -98,6 +126,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 		if (existingSubscription != null) {
             subs.remove(existingSubscription);
         }
+		m_db.commit();
 	}
 
 	@Override
@@ -129,6 +158,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	     }
 		events.remove(toRemoveEvt);
 		persistentOfflineMessage.put(clientID, events);
+		m_db.commit();
 	}
 
 	@Override
@@ -142,16 +172,19 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	        }
 	        storedEvents.add(pubEvent);
 	        persistentOfflineMessage.put(clientID, storedEvents);
+	        m_db.commit();
 	}
 
 	@Override
 	public void storeQosPublishMessage(String publishKey, PublishEvent pubEvent) {
 		persistentQosTempMessage.put(publishKey, pubEvent);
+		m_db.commit();
 	}
 
 	@Override
 	public void removeQosPublishMessage(String publishKey) {
 		persistentQosTempMessage.remove(publishKey);
+		m_db.commit();
 	}
 	
 	@Override
@@ -161,21 +194,19 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	
 	@Override
 	public void storePubRelMessage(String pubRelKey, PubRelEvent pubRelEvent) {
-		// TODO Auto-generated method stub
-		
+		persistentPubRelTempMessage.put(pubRelKey, pubRelEvent);
+		m_db.commit();
 	}
 
 	@Override
 	public void removePubRelMessage(String pubRelKey) {
-		// TODO Auto-generated method stub
-		
+		persistentPubRelTempMessage.remove(pubRelKey);
+		m_db.commit();
 	}
 
 	@Override
 	public PubRelEvent searchPubRelMessage(String pubRelKey) {
-		return null;
-		// TODO Auto-generated method stub
-		
+		return persistentPubRelTempMessage.get(pubRelKey);
 	}
 
 	@Override
@@ -185,12 +216,14 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 		} else {
 			StoredMessage storedMessage = new StoredMessage(message, qos, topic);
 			retainedStore.put(topic, storedMessage);
-		}	
+		}
+		m_db.commit();
 	}
 
 	@Override
 	public void cleanRetained(String topic) {
 		retainedStore.remove(topic);
+		m_db.commit();
 	}
 
 	@Override
@@ -198,30 +231,29 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	
-	@Override
-	public void addSession(String clientID, String token) {
-		persisitentSessionStore.put(clientID, token);
-	}
 
 	@Override
 	public void storePublicPackgeID(String clientID, Integer packgeID) {
 		publishPackgeIDStore.put(clientID, packgeID);
+		m_db.commit();
 	}
 
 	@Override
 	public void removePublicPackgeID(String clientID) {
 		publishPackgeIDStore.remove(clientID);
+		m_db.commit();
 	}
 
 	@Override
 	public void storePubRecPackgeID(String clientID, Integer packgeID) {
 		pubRecPackgeIDStore.put(clientID, packgeID);
+		m_db.commit();
 	}
 	
 	@Override
 	public void removePubRecPackgeID(String clientID) {
 		pubRecPackgeIDStore.remove(clientID);
+		m_db.commit();
 	}
 
 }

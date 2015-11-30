@@ -94,6 +94,7 @@ public class ProtocolProcess {
 			ISessionStore sessionStore){
 		this.authenticator = authenticator;
 		this.messagesStore = messagesStore;
+		this.messagesStore.initStore();//初始化存储
 		this.sessionStore = sessionStore;
 		this.subscribeStore = new SubscribeStore();
 	}
@@ -212,7 +213,7 @@ public class ProtocolProcess {
         ConnAckMessage okResp = new ConnAckMessage();
         okResp.setStatus(ConnAckMessage.ConnectionStatus.ACCEPTED);
         //协议32,session present的处理
-        if (!connectMessage.isCleanSession() && sessionStore.contains(connectMessage.getClientId())) {
+        if (!connectMessage.isCleanSession() && sessionStore.searchSubscriptions(connectMessage.getClientId())) {
         	okResp.setSessionPresent(1);
 		}else{
 			okResp.setSessionPresent(0);
@@ -497,7 +498,7 @@ public class ProtocolProcess {
 		 Log.info("处理unSubscribe数据包，客户端ID={"+clientID+"}");
 		 List<String> topicFilters = unSubscribeMessage.getTopicFilter();
 		 for (String topic : topicFilters) {
-			//TODO 取消订阅树里的订阅
+			//取消订阅树里的订阅
 			subscribeStore.removeSubscription(topic, clientID);
 			sessionStore.removeSubscription(topic, clientID);
 		 }
