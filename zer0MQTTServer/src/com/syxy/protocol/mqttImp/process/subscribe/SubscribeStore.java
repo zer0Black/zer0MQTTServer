@@ -17,14 +17,13 @@ public class SubscribeStore {
     
 	private TreeNode root = new TreeNode(null);
 	
-	/**
-	 * <li>方法名 addSuscription
-	 * <li>@param newSubscription
-	 * <li>返回类型 void
-	 * <li>说明 添加新的订阅到订阅树里
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-19
-	 */
+	 /**
+	  * 添加新的订阅到订阅树里
+	  * @param newSubscription
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-04-19
+	  */
 	public void addSubscrpition(Subscription newSubscription){	
 		List<TreeNode> treeNodes = searchNodeList(newSubscription.topicFilter);
 		for (TreeNode t : treeNodes) {
@@ -33,13 +32,13 @@ public class SubscribeStore {
 	} 
 
 	 /**
-	 * <li>方法名  searchNodeList
-	 * <li>@param topic
-	 * <li>返回类型 {@link List<TreeNode>}
-	 * <li>说明 根据topic搜索节点，若无此节点则创建,最后返回一个所搜索的所有节点的列表
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-25
-     */
+	  * 根据topic搜索节点，若无此节点则创建,最后返回一个所搜索的所有节点的列表
+	  * @param topic
+	  * @return List<TreeNode>
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-04-25
+	  */
 	public List<TreeNode> searchNodeList(String topic){
 		List<Token> tokens = new ArrayList<Token>();
 		List<TreeNode> childList = new ArrayList<TreeNode>();
@@ -90,14 +89,14 @@ public class SubscribeStore {
 		return childList;
 	}
 	
-    /**
-	 * <li>方法名 getClientListFromTopic
-	 * <li>@param topic
-	 * <li>返回类型List<Subscription
-	 * <li>说明 解析topic,从topic获取到对应的客户端ID群
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-04 
-     */
+	 /**
+	  * 解析topic,从topic获取到对应的客户端ID群
+	  * @param topic
+	  * @return List<Subscription>
+	  * @author zer0
+	  * @version 1.0
+     * @date 2015-05-04
+	  */
 	public List<Subscription> getClientListFromTopic(String topic) {
 		List<Token> tokens;
 		try {
@@ -111,27 +110,25 @@ public class SubscribeStore {
 		return matchingSubs;
 	}
 	
-	/**
-  	 * <li>方法名 removeForClient
-  	 * <li>param clientID
-  	 * <li>返回类型 {@link void}
-  	 * <li>说明  把某个clientID从订阅树里移走
-  	 * <li>作者 zer0
-  	 * <li>创建日期 2015-5-04
-     */
+	 /**
+	  * 把某个clientID从订阅树里移走
+	  * @param clientID
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-05-04
+	  */
 	public void removeForClient(String clientID) {
 	    root.removeClientSubscription(clientID);
 	}
-	
-	/**
-	 * <li>方法名 removeSubscription
-	 * <li>@param topic
-	 * <li>@param clientID
-	 * <li>返回参数 void
-	 * <li>说明 从订阅结构树中移除某个订阅主题中的某个client
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-06-29
-	 */
+
+	 /**
+	  * 从订阅结构树中移除某个订阅主题中的某个client
+	  * @param topic
+	  * @param clientID
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-06-29
+	  */
 	public void removeSubscription(String topic, String clientID){
 		List<TreeNode> treeNodes = searchNodeList(topic);
 		for (TreeNode t : treeNodes) {
@@ -143,15 +140,55 @@ public class SubscribeStore {
 		}
 	}
 	
-    /**
-	 * <li>方法名 parseTopic
-	 * <li>@param topic
-	 * <li>返回类型 List<Token>
-	 * <li>说明 解析topic，根据协议得到对应的token列表
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-19
-     * <li>@throws ParseException 
-     */
+	/**
+	 * 比较两个Topic字段是否相等，需处理#，+等情况
+	 * @param retainTopic
+	 * @param subscriptionTopic
+	 * @return boolean
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-12-1
+	 */
+	 public static boolean matchTopics(String retainTopic, String subscriptionTopic) {
+		 try {
+	            List<Token> retainTokens = SubscribeStore.parseTopic(retainTopic);
+	            List<Token> subscriptionTokens = SubscribeStore.parseTopic(subscriptionTopic);
+	            int i = 0;
+	            Token subToken = null;
+	            for (; i< subscriptionTokens.size(); i++) {
+	                subToken = subscriptionTokens.get(i);
+	                if (subToken != Token.MULTI && subToken != Token.SINGLE) {
+	                    if (i >= retainTokens.size()) {
+	                        return false;
+	                    }
+	                    Token msgToken = retainTokens.get(i);
+	                    if (!msgToken.equals(subToken)) {
+	                        return false;
+	                    }
+	                } else {
+	                    if (subToken == Token.MULTI) {
+	                        return true;
+	                    }
+	                    if (subToken == Token.SINGLE) {
+	                        //跳过
+	                    }
+	                }
+	            }
+	            return i == retainTokens.size();
+	        } catch (ParseException ex) {
+	            ex.printStackTrace();
+	            throw new RuntimeException(ex);
+	        }
+	 }
+
+	 /**
+	  *  解析topic，根据协议得到对应的token列表
+	  * @param topic
+	  * @return List<Token>
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-06-29
+	  */
 	static List<Token> parseTopic(String topic) throws ParseException{
 		List<Token> tokens = new ArrayList<Token>();
 		String[] token = topic.split("/");

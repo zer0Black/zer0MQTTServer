@@ -38,6 +38,7 @@ public interface IMessagesStore {
 		public String getTopic() {
             return topic;
         }
+		
     }
 	
 	/**

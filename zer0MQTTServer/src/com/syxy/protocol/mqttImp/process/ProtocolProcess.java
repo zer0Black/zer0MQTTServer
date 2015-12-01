@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp.process;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -634,17 +635,16 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 sendPulicMessage
-	 * <li>@param topic
-	 * <li>@param qos
-	 * <li>@param message
-	 * <li>@param retain
-	 * <li>@param PackgeID
-	 * <li>返回类型 void
-	 * <li>说明 取出所有匹配topic的客户端，然后发送public消息给客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-19
-	 */
+	  * 取出所有匹配topic的客户端，然后发送public消息给客户端
+	  * @param topic
+	  * @param qos
+	  * @param message
+	  * @param retain
+	  * @param PackgeID
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-05-19
+	  */
 	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
 		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
@@ -690,18 +690,18 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 sendPulicMessage
-	 * <li>@param topic
-	 * <li>@param qos
-	 * <li>@param message
-	 * <li>@param retain
-	 * <li>@param PackgeID
-	 * <li>@param dup
-	 * <li>返回类型 void
-	 * <li>说明 发送publish消息给指定客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-19
-	 */
+	  * 发送publish消息给指定ID的客户端
+	  * @param clientID
+	  * @param topic
+	  * @param qos
+	  * @param message
+	  * @param retain
+	  * @param PackgeID
+	  * @param dup
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-05-19
+	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
 		Log.info("发送pulicMessage给指定客户端");
 			
@@ -730,6 +730,22 @@ public class ProtocolProcess {
 		
 		//从会话列表中取出会话，然后通过此会话发送publish消息
 		this.clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+	}
+	
+	 /**
+	  * 发送保存的Retain消息
+	  * @param clientID
+	  * @param topic
+	  * @param qos
+	  * @param message
+	  * @param retain
+	  * @author zer0
+	  * @version 1.0
+      * @date 2015-12-1
+	  */
+	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain){
+		int packageID = 1;
+		sendPublishMessage(clientID, topic, qos, message, true, packageID, false);
 	}
 	
 	/**
@@ -883,5 +899,10 @@ public class ProtocolProcess {
 		sessionStore.addNewSubscription(newSubscription, clientID);
 		subscribeStore.addSubscrpition(newSubscription);
 		//TODO 此处还需要将此订阅之前存储的信息发出去
+		 Collection<IMessagesStore.StoredMessage> messages = messagesStore.searchRetained(topic);
+		 for (IMessagesStore.StoredMessage storedMsg : messages) {
+	            Log.debug("send publish message for topic {" + topic + "}");
+	            sendPublishMessage(newSubscription.getClientID(), storedMsg.getTopic(), storedMsg.getQos(), storedMsg.getPayload(), true);
+	     }
 	}
 }

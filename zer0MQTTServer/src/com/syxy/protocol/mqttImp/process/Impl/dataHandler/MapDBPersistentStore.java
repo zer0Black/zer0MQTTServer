@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
@@ -19,6 +20,7 @@ import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
+import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 import com.syxy.util.MqttTool;
 
@@ -163,7 +165,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 
 	@Override
 	public void storeMessageToSessionForPublish(PublishEvent pubEvent) {
-		 List<PublishEvent> storedEvents;
+		 	List<PublishEvent> storedEvents;
 	        String clientID = pubEvent.getClientID();
 	        if (!persistentOfflineMessage.containsKey(clientID)) {
 	            storedEvents = new ArrayList<PublishEvent>();
@@ -228,8 +230,14 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 
 	@Override
 	public Collection<StoredMessage> searchRetained(String topic) {
-		// TODO Auto-generated method stub
-		return null;
+		List<StoredMessage> results = new ArrayList<StoredMessage>();
+		 for (Map.Entry<String, StoredMessage> entry : retainedStore.entrySet()) {
+	            StoredMessage storedMsg = entry.getValue();
+	            if (SubscribeStore.matchTopics(entry.getKey(), topic)) {
+	                results.add(storedMsg);
+	            }
+	      }
+		return results;
 	}
 
 	@Override
