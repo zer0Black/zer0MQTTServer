@@ -3,7 +3,8 @@ package com.syxy.protocol.mqttImp;
 public enum QoS {
 	AT_MOST_ONCE  (0),
 	AT_LEAST_ONCE (1),
-	EXACTLY_ONCE  (2);
+	EXACTLY_ONCE  (2),
+	RESERVE(3);
 	
 	final public int val;
 	

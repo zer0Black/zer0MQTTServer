@@ -12,6 +12,8 @@ import org.apache.log4j.Logger;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import test.client;
+
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
@@ -123,11 +125,15 @@ public class ProtocolProcess {
 			return;
 		}
 		
+		//处理Connect包的保留位不为0的情况，协议P24
+		if (!connectMessage.isReservedIsZero()) {
+			client.close();
+		}
+		
 		//处理clientID为null或长度为0的情况，协议P29
 		if (connectMessage.getClientId() == null || connectMessage.getClientId().length() == 0) {
 			//clientID为null的时候，cleanSession只能为1,此时给client设置一个随即的mac地址为ID，否则，断开连接
 			if (connectMessage.isCleanSession()) {
-//				connectMessage.setClientId(StringTool.generalRandomString(23));
 				connectMessage.setClientId(StringTool.generalMacString());
 			} else {
 				Log.info("客户端ID为空，cleanSession为0，根据协议，不接收此客户端");
@@ -179,6 +185,7 @@ public class ProtocolProcess {
 			//把遗嘱信息与和其对应的的clientID存储在一起
 			willStore.put(connectMessage.getClientId(), will);
 		}
+		
 		//处理身份验证（userNameFlag和passwordFlag）
 		if (connectMessage.isHasUsername() && connectMessage.isHasPassword()) {
 			String userName = connectMessage.getUsername();
@@ -246,9 +253,10 @@ public class ProtocolProcess {
 		final String topic = publishMessage.getTopic();
 	    final QoS qos = publishMessage.getQos();
 	    final byte[] message = publishMessage.getData();
-	    boolean retain = publishMessage.isRetain();
 	    final int packgeID = publishMessage.getPackgeID();
-	    processPublic(clientID, topic, qos, message, retain, packgeID);
+	    final boolean retain = publishMessage.isRetain();
+	    
+	    processPublic(clientID, topic, qos, retain, message, packgeID);
 	}
 	
 	/**
@@ -266,9 +274,9 @@ public class ProtocolProcess {
 		final String topic = willMessage.getTopic();
 	    final QoS qos = willMessage.getQos();
 	    final byte[] message = willMessage.getPayload();
-	    boolean retain = willMessage.isRetained();
+	    final boolean retain = willMessage.isRetained();
 	    
-	    processPublic(clientID, topic, qos, message, retain, null);
+	    processPublic(clientID, topic, qos, retain, message, null);
 	}
 	
 	/**
@@ -284,24 +292,32 @@ public class ProtocolProcess {
 	 * <li>作者 zer0
 	 * <li>创建日期 2015-5-19
 	 */
-	private void processPublic(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID){
+	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, byte[] message, Integer packgeID){
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
 		String publishKey = null;
+		
+		//根据协议P34，Qos=3的时候，就关闭连接
+		if (qos == QoS.RESERVE) {
+			clients.get(clientID).getClient().close();
+		}
 		
 		//根据协议P52，qos=0, Dup=0, 则把消息发送给所有注册的客户端即可
 		if (qos == QoS.AT_MOST_ONCE) {
 			boolean dup = false;
+			boolean retain = false;
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 		}
 		
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
 		//发送该publish消息时候，按此流程： 存储消息→发送给所有人→等待pubAck到来→删除消息
 		if (qos == QoS.AT_LEAST_ONCE) {
+			boolean retain = false;
+			boolean dup = false;
+			
 			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
                     clientID, packgeID);
-			
-			boolean dup = false;
+		
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			//存临时Publish消息，用于重发
 			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
@@ -320,12 +336,11 @@ public class ProtocolProcess {
 		//接收端：publish接收消息→存储包ID→发给其他客户端→发回pubRec→收到pubRel→抛弃第二步存储的包ID→发回pubcomp
 		//发送端：存储消息→发送publish(Qos=2,Dup=0)→收到pubRec→抛弃第一步存储的消息→存储pubRec的包ID→发送pubRel→收到pubcomp→抛弃pubRec包ID的存储
 		if (qos == QoS.EXACTLY_ONCE) {
-			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
-			
-			messagesStore.storePublicPackgeID(clientID, packgeID);
-			
-			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
 			boolean dup = false;
+			boolean retain = false;
+			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
+			messagesStore.storePublicPackgeID(clientID, packgeID);
+			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
 			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
 			
 			//存临时Publish消息，用于重发
@@ -340,7 +355,7 @@ public class ProtocolProcess {
 			sendPubRec(clientID, packgeID);
 		}
 		
-		if (retain) {
+		if (recRetain) {
 			if (qos == QoS.AT_MOST_ONCE) {
 				messagesStore.cleanRetained(topic);
 			} else {
@@ -543,12 +558,12 @@ public class ProtocolProcess {
 			cleanSession(clientID);
 		 }
 		 
-		 //如果有遗言消息，就发遗言出去
-		 if (willStore.containsKey(clientID)) {
-			WillMessage will = willStore.get(clientID);
-			processPublic(client, will);
+//		 //如果有遗言消息，就发遗言出去
+//		 if (willStore.containsKey(clientID)) {
+//			WillMessage will = willStore.get(clientID);
+//			processPublic(client, will);
 			willStore.remove(clientID);
-		 }
+//		 }
 		 
 		 this.clients.remove(clientID);
 		 client.close();
@@ -745,7 +760,7 @@ public class ProtocolProcess {
 	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain){
 		int packageID = 1;
-		sendPublishMessage(clientID, topic, qos, message, true, packageID, false);
+		sendPublishMessage(clientID, topic, qos, message, retain, packageID, false);
 	}
 	
 	/**

@@ -85,6 +85,7 @@ public class MQTTProcess implements IProcessHandler {
 			protocolProcess.processDisconnet(client, disconnectMessage);
 			break;
 		default:
+			client.close();
 			throw new UnsupportedOperationException("不支持" + msg.getType()+ "消息类型");
 		}
 	}

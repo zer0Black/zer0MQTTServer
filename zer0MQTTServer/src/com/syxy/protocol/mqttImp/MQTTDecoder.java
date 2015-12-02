@@ -8,11 +8,17 @@ import org.apache.log4j.Logger;
 import com.syxy.protocol.IDecoderHandler;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.DisconnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
+import com.syxy.protocol.mqttImp.message.PingReqMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
+import com.syxy.protocol.mqttImp.message.PubRecMessage;
+import com.syxy.protocol.mqttImp.message.PubRelMessage;
+import com.syxy.protocol.mqttImp.message.PubcompMessage;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
+import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 
 /**
  * <li>说明 MQTT协议解码
@@ -38,8 +44,7 @@ public class MQTTDecoder implements IDecoderHandler {
 					msg = new ConnectMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case CONNACK:
-					msg = new ConnAckMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
-					return msg;
+					break;
 				case PUBLISH:
 					msg = new PublishMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
@@ -47,35 +52,32 @@ public class MQTTDecoder implements IDecoderHandler {
 					msg = new PubAckMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case PUBREC:
-
-					break;
+					msg = new PubRecMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PUBREL:
-
-					break;
+					msg = new PubRelMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PUBCOMP:
-
-					break;
+					msg = new PubcompMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case SUBSCRIBE:
 					msg = new SubscribeMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case SUBACK:
-
 					break;
 				case UNSUBSCRIBE:
-
-					break;
+					msg = new UnSubscribeMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case UNSUBACK:
-
 					break;
 				case PINGREQ:
-
-					break;
+					msg = new PingReqMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				case PINGRESP:
-
 					break;
 				case DISCONNECT:
-
-					break;
+					msg = new DisconnectMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
+					return msg;
 				default:
 					Log.error("消息类型" + headerMessage.getType() + "不支持");
 					throw new UnsupportedOperationException("不支持" + headerMessage.getType()+ "消息类型");

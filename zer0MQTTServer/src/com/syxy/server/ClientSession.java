@@ -233,6 +233,7 @@ public class ClientSession {
 	 * @throws IOException 
 	 */
 	public void keepAliveHandler(String flag){
+		//TODO
 		int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
 		Timer timer = new Timer();
 		TimeOutTask tt=new TimeOutTask(keepAlive);
