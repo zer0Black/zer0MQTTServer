@@ -47,7 +47,8 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 	@Override
 	public void failed(Throwable exc, ClientSession client) {
 		Log.warn("客户端(" + client.getIp() + ") 读操作失败");  
-		this.tcpServer.getReadHandlerThread().processResponse(client);
+		Log.debug("错误代码"+exc);
+//		this.tcpServer.getReadHandlerThread().processResponse(client);
 	}
 	
 	public void cancelled(ClientSession client) {  

@@ -82,7 +82,7 @@ public class QuartzManager {
 			JobKey jobKey = new JobKey(jobName, jobGroupName);
 			sched.pauseTrigger(triggerKey);//停止触发器  
 			sched.unscheduleJob(triggerKey);//移除触发器  
-			sched.deleteJob(jobKey);//删除任务  
+			sched.deleteJob(jobKey);//删除任务
 		} catch (SchedulerException e) {
 			e.printStackTrace();
 		}

@@ -363,7 +363,7 @@ public class ProtocolProcess {
 		 int packgeID = pubAckMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
 		 //取消Publish重传任务
-		 QuartzManager.removeJob(publishKey, publishKey, publishKey, publishKey);
+		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 //删除临时存储用于重发的Publish消息
 		 messagesStore.removeQosPublishMessage(publishKey);
 		 //删除离线消息
@@ -385,7 +385,7 @@ public class ProtocolProcess {
 		 String publishKey = String.format("%s%d", clientID, packgeID);
 		 
 		 //取消Publish重传任务,同时删除对应的值
-		 QuartzManager.removeJob(publishKey, publishKey, publishKey, publishKey);
+		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 messagesStore.removeQosPublishMessage(publishKey);
 		 //删除离线消息
 		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
@@ -439,6 +439,7 @@ public class ProtocolProcess {
 		 //删除存储的PubRec包ID
 		 messagesStore.removePubRecPackgeID(clientID);
 		 //取消PubRel的重传任务，删除临时存储的PubRel事件
+		 QuartzManager.removeJob(pubRelkey, "pubRel", pubRelkey, "pubRel");
 		 messagesStore.removePubRelMessage(pubRelkey);
 	}
 	
@@ -646,7 +647,6 @@ public class ProtocolProcess {
       * @date 2015-05-19
 	  */
 	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
-		Log.info("发送pulicMessage给客户端");
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
 			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {

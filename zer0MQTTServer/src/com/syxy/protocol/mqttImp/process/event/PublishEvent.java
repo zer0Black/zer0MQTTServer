@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process.event;
 
+import java.io.Serializable;
+
 import com.syxy.protocol.mqttImp.QoS;
 
 /**
@@ -9,7 +11,7 @@ import com.syxy.protocol.mqttImp.QoS;
  * @version 1.0
  * @date 2015-05-11
  */
-public class PublishEvent {
+public class PublishEvent implements Serializable{
 	String topic;
 	QoS qos;
 	byte[] message;

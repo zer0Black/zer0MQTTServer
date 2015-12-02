@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp.process.subscribe;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 
@@ -11,7 +12,7 @@ import com.syxy.protocol.mqttImp.QoS;
  * <li>作者 zer0
  * <li>创建日期 2015-4-11
  */
-public class Subscription{
+public class Subscription implements Serializable{
 	
 	QoS requestedQos; //max QoS acceptable
     String topicFilter;

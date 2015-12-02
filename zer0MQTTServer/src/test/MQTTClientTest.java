@@ -30,7 +30,7 @@ public class MQTTClientTest extends JFrame {
     private MqttMessage message;  
   
     private String myTopic = "test/topic";  
-    String clientMac = "d3-af-23-f2-aa-2d";
+    String clientMac = "c3-af-23-f2-aa-2d";
   
     public MQTTClientTest() {  
   

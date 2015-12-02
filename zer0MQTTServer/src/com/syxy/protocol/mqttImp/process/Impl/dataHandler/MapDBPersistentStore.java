@@ -52,7 +52,8 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	
 	@Override
 	public void initStore() {
-		 String STORAGE_FILE_PATH =  System.getProperty("user.home") + File.separator + MqttTool.getProperty("path");
+		 String STORAGE_FILE_PATH =  System.getProperty("user.dir") + File.separator + MqttTool.getProperty("path");
+		 Log.info("存储文件的初始化位置"+STORAGE_FILE_PATH);
 	     File tmpFile;
 	     try {
 	    	 tmpFile = new File(STORAGE_FILE_PATH);
@@ -85,7 +86,7 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	public void addNewSubscription(Subscription newSubscription, String clientID) {
 		Log.info("添加新订阅，订阅:" + newSubscription + ",客户端ID:" + clientID );
 		 if (!persistentSubscriptionStore.containsKey(clientID)) {
-	            Log.info("没客户端ID" + clientID + " , 为它创建订阅集");
+	            Log.info("客户端ID{" + clientID + "}不存在订阅集 , 为它创建订阅集");
 	            persistentSubscriptionStore.put(clientID, new HashSet<Subscription>());
 	     }
 		 
