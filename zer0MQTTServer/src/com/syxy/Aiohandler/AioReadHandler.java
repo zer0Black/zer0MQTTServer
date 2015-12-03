@@ -36,7 +36,7 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 		 
 		 if (result > 0){// 读取到客户端的数据  
 		     try {
-		    	 Log.info("读取到客户端的数据");
+		    	 Log.info("读取到客户端的数据，大小为"+result);
 		    	 this.tcpServer.getReadHandlerThread().processResponse(client);
 			} catch (Exception e) {
 				Log.info(e.getMessage());

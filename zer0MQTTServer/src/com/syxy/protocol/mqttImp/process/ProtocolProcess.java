@@ -180,7 +180,7 @@ public class ProtocolProcess {
 		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接(但这里要注意把单位是s转为ms)
 		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive *1000);
 		//开启心跳包计时验证
-		client.keepAliveHandler(Constant.CONNECT_ARRIVE);
+		client.keepAliveHandler(Constant.CONNECT_ARRIVE, client.getAttributesKeys(Constant.CLIENT_ID)+"");
 		
 		//处理Will flag（遗嘱信息）,协议P26
 		if (connectMessage.isHasWill()) {
@@ -540,7 +540,7 @@ public class ProtocolProcess {
 		 Log.info("收到心跳包");
 		 PingRespMessage pingRespMessage = new PingRespMessage();
 		 //重置心跳包计时器
-		 client.keepAliveHandler(Constant.PING_ARRIVE);
+		 client.keepAliveHandler(Constant.PING_ARRIVE, client.getAttributesKeys(Constant.CLIENT_ID)+"");
 		 client.writeMsgToReqClient(pingRespMessage);
 	}
 	

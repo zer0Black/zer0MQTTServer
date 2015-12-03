@@ -26,8 +26,10 @@ public class KeepAliveJob implements Job{
 		//取出参数，参数为ProtocolProcess，调用此类的函数
 		JobDataMap dataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 		ClientSession clientSession = (ClientSession) dataMap.get("ClientSession");
+		String clientID = (String) dataMap.get("clientID");
+		
 		Log.info("规定时间内未收到心跳包,应断开连接");
-		QuartzManager.removeJob("keepAlive", "keepAlives", "keepAlive", "keepAlives");
+		QuartzManager.removeJob(clientID, "keepAlives", clientID, "keepAlives");
 		clientSession.close();
 	}
 	

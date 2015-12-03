@@ -21,6 +21,7 @@ import com.syxy.server.job.KeepAliveJob;
 import com.syxy.util.BufferPool;
 import com.syxy.util.Constant;
 import com.syxy.util.QuartzManager;
+import com.syxy.util.coderTool;
 
 /**
  *  客户session，每个连接一个ClientSession对象，用于处理客户请求和响应
@@ -111,8 +112,12 @@ public class ClientSession {
 	public boolean readRequest(){
 		Log.info("进行解码处理");	
 		boolean returnValue = false;// 返回值	,若数据处理完毕无问题，改为true
-		
 		this.byteBuffer.flip();
+		
+//		String bufData = coderTool.decode(this.byteBuffer).toString();
+//		Log.info("读到的数据长度为"+bufData.length()+",是"+bufData);
+//		this.byteBuffer.flip();
+
 		this.msg = this.decoderHandler.process(this.byteBuffer);
 		this.byteBuffer.clear();
 		//使用完缓冲区以后释放
@@ -173,7 +178,11 @@ public class ClientSession {
 	 */
 	public void process(){
 		try{
-			this.processHandler.process(msg, this);// 业务处理
+			if (msg != null) {
+				this.processHandler.process(msg, this);// 业务处理
+			}else {
+				Log.debug("连接"+this.getIp()+"的msg为空");
+			}
 		}catch(Exception e){
 			e.printStackTrace();
 			this.close();
@@ -236,14 +245,15 @@ public class ClientSession {
 	 * @version 1.0
 	 * @date  2015-6-29
 	 */
-	public void keepAliveHandler(String flag){
+	public void keepAliveHandler(String flag, String clientID){
 		int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
 		Map<String, Object> jobParam = new HashMap<String, Object>();
 		jobParam.put("ProtocolProcess", this);
+		jobParam.put("clientID", clientID);
 		if (flag.equals(Constant.CONNECT_ARRIVE)) {
-			QuartzManager.addJob("keepAlive", "keepAlives", "keepAlive", "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
+			QuartzManager.addJob(clientID, "keepAlives", clientID, "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
 		}else if (flag.equals(Constant.PING_ARRIVE)) {
-			QuartzManager.resetJob("keepAlive", "keepAlives", "keepAlive", "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
+			QuartzManager.resetJob(clientID, "keepAlives", clientID, "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
 		}
 	}
 	

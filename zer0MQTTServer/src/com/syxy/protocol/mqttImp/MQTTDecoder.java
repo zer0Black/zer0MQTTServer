@@ -35,7 +35,7 @@ public class MQTTDecoder implements IDecoderHandler {
 	public Message process(ByteBuffer byteBuffer) {
 		try {
 			//首先判断缓存中协议头是否读完（MQTT协议头为2字节）	
-			if (byteBuffer.limit() > 2) {
+			if (byteBuffer.limit() >= 2) {
 				HeaderMessage headerMessage = (HeaderMessage) HeaderMessage.decodeMessage(byteBuffer);
 				Message msg = null;
 				
@@ -45,7 +45,7 @@ public class MQTTDecoder implements IDecoderHandler {
 					msg = new ConnectMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case CONNACK:
-					break;
+					throw new UnsupportedOperationException("服务端不可能收到Connack包");
 				case PUBLISH:
 					msg = new PublishMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
@@ -65,17 +65,17 @@ public class MQTTDecoder implements IDecoderHandler {
 					msg = new SubscribeMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case SUBACK:
-					break;
+					throw new UnsupportedOperationException("服务端不可能收到SUBACK包");
 				case UNSUBSCRIBE:
 					msg = new UnSubscribeMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case UNSUBACK:
-					break;
+					throw new UnsupportedOperationException("服务端不可能收到UNSUBACK包");
 				case PINGREQ:
 					msg = new PingReqMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
 				case PINGRESP:
-					break;
+					throw new UnsupportedOperationException("服务端不可能收到PINGRESP包");
 				case DISCONNECT:
 					msg = new DisconnectMessage(headerMessage).decode(byteBuffer, headerMessage.getMessageLength());
 					return msg;
@@ -83,6 +83,8 @@ public class MQTTDecoder implements IDecoderHandler {
 					Log.error("消息类型" + headerMessage.getType() + "不支持");
 					throw new UnsupportedOperationException("不支持" + headerMessage.getType()+ "消息类型");
 				}
+			}else {
+				Log.info("缓存中协议头小于2字节，不完整");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();

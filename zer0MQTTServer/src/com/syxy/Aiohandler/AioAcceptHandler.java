@@ -21,6 +21,7 @@ import com.syxy.server.TcpServer;
 public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, TcpServer>{
 
 	private final static Logger Log = Logger.getLogger(AioAcceptHandler.class);
+	int count = 0;
 	
 	@Override
 	public void completed(AsynchronousSocketChannel socketChannel,
@@ -33,14 +34,16 @@ public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketCha
 			 * 只需要从client队列取出对应的client来操作即可。
 			 * ConcurrentHashMap是线程安全的
 			 */
+			count++;
+			Log.info("已连接"+count);
 			Log.info("来自" + socketChannel.getRemoteAddress() + "的连接已建立");
-			Integer index = 0;
+//			Integer index = 0;
 			
 			ClientSession client = new ClientSession(socketChannel, 
 					attachment.getReadHandler(), 
 					attachment.getWriteHandler(),
 					attachment);
-			index = attachment.getKeyIndex().incrementAndGet();
+//			index = attachment.getKeyIndex().incrementAndGet();
 
 			client.registeHandler(attachment.getCoderHandler(), attachment.getDecoderHandler(), attachment.getProcessHandler());
 			

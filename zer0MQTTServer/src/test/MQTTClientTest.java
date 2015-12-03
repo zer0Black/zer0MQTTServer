@@ -16,6 +16,8 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttTopic;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import com.syxy.util.StringTool;
+
 public class MQTTClientTest extends JFrame {  
     private static final long serialVersionUID = 1L;  
     private JPanel panel;  
@@ -30,35 +32,35 @@ public class MQTTClientTest extends JFrame {
     private MqttMessage message;  
   
     private String myTopic = "test/topic";  
-    String clientMac = "c3-af-23-f2-aa-2d";
+    String clientMac = StringTool.generalMacString();
   
     public MQTTClientTest() {  
   
-        try {  
+        try { 
             client = new MqttClient(host, clientMac, new MemoryPersistence());  
             connect();
             client.subscribe(myTopic, 1);
         } catch (Exception e) { 
-            e.printStackTrace();  
+            e.printStackTrace(); 
         }
   
-        Container container = this.getContentPane();  
-        panel = new JPanel();  
-        button = new JButton(clientMac);  
-        button.addActionListener(new ActionListener() {  
-
-            public void actionPerformed(ActionEvent ae) {  
-                try { 
-                    MqttDeliveryToken token = topic.publish(message);  
-                    token.waitForCompletion();  
-                    System.out.println(token.isComplete()+"========");  
-                } catch (Exception e) {  
-                    e.printStackTrace();  
-                }  
-            } 
-        });  
-        panel.add(button);  
-        container.add(panel, "North");  
+//        Container container = this.getContentPane();  
+//        panel = new JPanel();  
+//        button = new JButton(clientMac);  
+//        button.addActionListener(new ActionListener() {  
+//
+//            public void actionPerformed(ActionEvent ae) {  
+//                try { 
+//                    MqttDeliveryToken token = topic.publish(message);  
+//                    token.waitForCompletion();  
+//                    System.out.println(token.isComplete()+"========");  
+//                } catch (Exception e) {  
+//                    e.printStackTrace();  
+//                }  
+//            } 
+//        });  
+//        panel.add(button);  
+//        container.add(panel, "North");  
     }  
   
     private void connect() {  
@@ -68,7 +70,7 @@ public class MQTTClientTest extends JFrame {
         options.setUserName(userName);  
         options.setPassword(passWord.toCharArray());  
         options.setConnectionTimeout(10);    
-        options.setKeepAliveInterval(60 * 5);  
+        options.setKeepAliveInterval(5 * 60);  
         try {  
             client.setCallback(new MqttCallback() {  
   
@@ -76,7 +78,7 @@ public class MQTTClientTest extends JFrame {
                     System.out.println("connectionLost-----------");  
                 }  
   
-                public void deliveryComplete(IMqttDeliveryToken token) {  
+                public void deliveryComplete(IMqttDeliveryToken token) { 
                     System.out.println("deliveryComplete---------"+token.isComplete());  
                 }  
   
@@ -104,11 +106,15 @@ public class MQTTClientTest extends JFrame {
   
     }  
   
-    public static void main(String[] args) {  
-    	MQTTClientTest s = new MQTTClientTest(); 
-        s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
-        s.setSize(600, 370);  
-        s.setLocationRelativeTo(null);  
-        s.setVisible(true);  
-    }  
+    public static void main(String[] args) {
+    	for (int i = 0; i < 1000; i++) {
+    		MQTTClientTest s = new MQTTClientTest();
+    		System.out.println(i);
+		}
+    		
+//        s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+//        s.setSize(600, 370);  
+//        s.setLocationRelativeTo(null);  
+//        s.setVisible(true);  
+    } 
 }  
