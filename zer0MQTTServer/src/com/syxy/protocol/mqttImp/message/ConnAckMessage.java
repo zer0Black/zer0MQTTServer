@@ -87,9 +87,6 @@ public class ConnAckMessage extends Message {
 		default:
 			throw new UnsupportedOperationException("CONNACK不支持该状态码 " + status);
 		}
-//		if (payload != null) {
-//			dos.writeUTF(payload);
-//		}
 		dos.flush();
 		
 		//将dos转换为byte[]，然后写入缓冲区
@@ -99,7 +96,6 @@ public class ConnAckMessage extends Message {
 
 	@Override
 	public Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException {
-		// TODO Auto-generated method stub
 		throw new UnsupportedOperationException("CONNACK无需解码，该类型仅能从服务器发往客户端");
 	}
 
@@ -110,7 +106,6 @@ public class ConnAckMessage extends Message {
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	
@@ -129,13 +124,5 @@ public class ConnAckMessage extends Message {
 	public void setSessionPresent(int sessionPresent) {
 		this.sessionPresent = sessionPresent;
 	}
-
-//	public String getPayload() {
-//		return payload;
-//	}
-//
-//	public void setPayload(String payload) {
-//		this.payload = payload;
-//	}
 
 }

@@ -17,7 +17,7 @@ public class StartServer {
 		TcpServer.getInstance(new MQTTCoder(), new MQTTDecoder(), new MQTTProcess()).startServer();
 		while(true){
 			try {
-				Thread.sleep(100000);
+				Thread.sleep(Integer.MAX_VALUE);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}

@@ -91,7 +91,7 @@ public abstract class Message {
 	 * @version 1.0
 	 * @date 2015-3-3
 	 */
-	public synchronized void releaseMessageId(int msgId) {
+	public synchronized static void releaseMessageId(int msgId) {
 		inUseMsgIds.remove(new Integer(msgId));
 	}
 	

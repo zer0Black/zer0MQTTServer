@@ -101,7 +101,8 @@ public class PublishMessage extends Message {
 
 	@Override
 	public boolean isMessageIdRequired() {
-		return true;
+		//publish的在Qos=1 or 2的时候才需要包ID，这个包ID进行单独处理，不统一在MQTTCoder里处理
+		return false;
 	}
 	
 	public String getTopic() {

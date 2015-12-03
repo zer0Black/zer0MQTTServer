@@ -1,6 +1,5 @@
 package com.syxy.protocol.mqttImp.process;
 
-import java.rmi.server.UID;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +13,7 @@ import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.DisconnectMessage;
+import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.PingReqMessage;
 import com.syxy.protocol.mqttImp.message.PingRespMessage;
 import com.syxy.protocol.mqttImp.message.PubAckMessage;
@@ -38,7 +38,6 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
 import com.syxy.util.QuartzManager;
 import com.syxy.util.StringTool;
-import com.syxy.util.Uid;
 
 /**
  *  协议所有的业务处理都在此类，注释中所指协议为MQTT3.3.1协议英文版
@@ -286,19 +285,20 @@ public class ProtocolProcess {
 	
 	/**
    	 * 根据协议进行具体的处理，处理不同的Qos等级下的public事件
-   	 * @param client
+   	 * @param clientID
    	 * @param topic
    	 * @param qos
    	 * @param recRetain
    	 * @param message
-   	 * @param topic
+   	 * @param recPackgeID 此包ID只是客户端传过来的，用于发回pubAck用，发送给其他客户端的包ID，需要重新生成
    	 * @author zer0
    	 * @version 1.0
    	 * @date 2015-5-19
    	 */
-	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, byte[] message, Integer packgeID){
-		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
+	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, byte[] message, Integer recPackgeID){
+		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+recPackgeID+"}");
 		String publishKey = null;
+		int sendPackageID = Message.getNextMessageId();
 		
 		//根据协议P34，Qos=3的时候，就关闭连接
 		if (qos == QoS.RESERVE) {
@@ -309,7 +309,7 @@ public class ProtocolProcess {
 		if (qos == QoS.AT_MOST_ONCE) {
 			boolean dup = false;
 			boolean retain = false;
-			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
+			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
 		}
 		
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
@@ -318,11 +318,11 @@ public class ProtocolProcess {
 			boolean retain = false;
 			boolean dup = false;
 			
-			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
+			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
 			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
-                    clientID, packgeID);
+                    clientID, sendPackageID);
 		
-			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
+			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
 			//存临时Publish消息，用于重发
 			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
 			//存离线消息
@@ -333,7 +333,7 @@ public class ProtocolProcess {
 			jobParam.put("publishKey", publishKey);
 			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
 					
-			sendPubAck(clientID, packgeID);
+			sendPubAck(clientID, recPackgeID);
 		}
 		
 		//根据协议P54，P55
@@ -342,10 +342,10 @@ public class ProtocolProcess {
 		if (qos == QoS.EXACTLY_ONCE) {
 			boolean dup = false;
 			boolean retain = false;
-			publishKey = String.format("%s%d", clientID, packgeID);//针对每个重生成key，保证消息ID不会重复
-			messagesStore.storePublicPackgeID(clientID, packgeID);
-			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, packgeID);
-			sendPublishMessage(topic, qos, message, retain, packgeID, dup);
+			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
+			messagesStore.storePublicPackgeID(clientID, sendPackageID);
+			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, sendPackageID);
+			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
 			
 			//存临时Publish消息，用于重发
 			messagesStore.storeQosPublishMessage(publishKey, pubEvent);
@@ -356,7 +356,7 @@ public class ProtocolProcess {
 			jobParam.put("publishKey", publishKey);
 			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
 			
-			sendPubRec(clientID, packgeID);
+			sendPubRec(clientID, recPackgeID);
 		}
 		
 		//处理消息是否保留，注：publish报文中的主题名不能包含通配符(协议P35)，所以retain中保存的主题名不会有通配符
@@ -387,6 +387,8 @@ public class ProtocolProcess {
 		 messagesStore.removeQosPublishMessage(publishKey);
 		 //删除离线消息
 		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
+		 //最后把使用完的包ID释放掉
+		 Message.releaseMessageId(packgeID);
 	}
 
 	/**
@@ -457,6 +459,8 @@ public class ProtocolProcess {
 		 //取消PubRel的重传任务，删除临时存储的PubRel事件
 		 QuartzManager.removeJob(pubRelkey, "pubRel", pubRelkey, "pubRel");
 		 messagesStore.removePubRelMessage(pubRelkey);
+		 //最后把使用完的包ID释放掉
+		 Message.releaseMessageId(packageID);
 	}
 
 	/**
@@ -749,7 +753,7 @@ public class ProtocolProcess {
       * @date 2015-12-1
 	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain){
-		int packageID = Uid.next();
+		int packageID = Message.getNextMessageId();
 		sendPublishMessage(clientID, topic, qos, message, retain, packageID, false);
 	}
 	
