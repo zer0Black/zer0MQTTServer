@@ -48,13 +48,11 @@ public class PubRecMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return PUBREC_SIZE;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 }

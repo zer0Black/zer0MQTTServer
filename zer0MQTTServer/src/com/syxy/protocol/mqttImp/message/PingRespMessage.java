@@ -42,13 +42,11 @@ public class PingRespMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 }

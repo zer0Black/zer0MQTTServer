@@ -49,13 +49,11 @@ public class PubRelMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return PUBREL_SIZE;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 }

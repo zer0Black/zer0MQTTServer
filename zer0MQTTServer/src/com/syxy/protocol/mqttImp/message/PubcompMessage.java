@@ -47,13 +47,11 @@ public class PubcompMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return PUBCOMP_SIZE;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 }

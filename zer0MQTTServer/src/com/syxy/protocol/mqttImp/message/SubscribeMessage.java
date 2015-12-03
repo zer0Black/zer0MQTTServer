@@ -78,7 +78,6 @@ public class SubscribeMessage extends Message {
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 	

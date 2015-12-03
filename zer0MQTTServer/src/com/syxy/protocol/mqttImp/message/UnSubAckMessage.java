@@ -44,13 +44,11 @@ public class UnSubAckMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return UNSUBACK_SIZE;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 }

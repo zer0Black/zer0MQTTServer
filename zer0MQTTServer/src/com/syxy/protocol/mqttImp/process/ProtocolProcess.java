@@ -1,5 +1,6 @@
 package com.syxy.protocol.mqttImp.process;
 
+import java.rmi.server.UID;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
 import com.syxy.util.QuartzManager;
 import com.syxy.util.StringTool;
+import com.syxy.util.Uid;
 
 /**
  *  协议所有的业务处理都在此类，注释中所指协议为MQTT3.3.1协议英文版
@@ -666,9 +668,9 @@ public class ProtocolProcess {
 			publishMessage.setData(message);
 			publishMessage.setDup(dup);
 			
-			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
-				publishMessage.setPackgeID(packgeID);
-			}
+//			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
+//				publishMessage.setPackgeID(packgeID);
+//			}
 			
 			if (!sub.isCleanSession()) {
 				 PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientID(), packgeID != null ? packgeID : 0);
@@ -707,7 +709,7 @@ public class ProtocolProcess {
 	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
 		Log.info("发送pulicMessage给指定客户端");
-			
+	
 		PublishMessage publishMessage = new PublishMessage();
 		publishMessage.setRetain(retain);
 		publishMessage.setTopic(topic);
@@ -747,7 +749,7 @@ public class ProtocolProcess {
       * @date 2015-12-1
 	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain){
-		int packageID = 1;
+		int packageID = Uid.next();
 		sendPublishMessage(clientID, topic, qos, message, retain, packageID, false);
 	}
 	
