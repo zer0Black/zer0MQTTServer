@@ -8,9 +8,11 @@ import com.syxy.protocol.mqttImp.process.Impl.dataHandler.DBConnection;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 
 /**
- * <li>说明 身份校验类，该类的校验仅允许数据库中有的用户通过验证
- * <li>作者 zer0
- * <li>创建日期 2015-6-30
+ *  身份校验类，该类的校验仅允许数据库中有的用户通过验证
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-6-30
  */
 public class IdentityAuthenticator implements IAuthenticator {
 

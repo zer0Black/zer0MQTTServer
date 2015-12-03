@@ -8,11 +8,12 @@ import java.nio.ByteBuffer;
 import com.syxy.protocol.mqttImp.Type;
 import com.syxy.server.ClientSession;
 
-
 /**
- * <li>MQTT协议ConnAck消息类型实现类，连接确认消息类型
- * <li>作者 zer0
- * <li>创建日期 2015-3-2
+ * MQTT协议ConnAck消息类型实现类，连接确认消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-2
  */
 public class ConnAckMessage extends Message {
 	
@@ -34,7 +35,6 @@ public class ConnAckMessage extends Message {
 	
 	private ConnectionStatus status;//返回给客户端的状态码
 	private int sessionPresent;//sessionPresent是告知客户端服务器是否存储了session的位
-//	private String payload;//荷载
 	
 	public ConnAckMessage(){
 		super(Type.CONNACK);

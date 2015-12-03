@@ -9,6 +9,13 @@ import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 
+/**
+ * MQTT协议PingResp消息类型实现类，客户端心跳包回应消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-2
+ */
 public class PingRespMessage extends Message {
 	
 	private final static Logger Log = Logger.getLogger(PingRespMessage.class);

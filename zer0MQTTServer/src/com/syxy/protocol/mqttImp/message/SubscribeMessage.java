@@ -15,6 +15,13 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 
+/**
+ * MQTT协议Subscribe消息类型实现类，用于订阅topic，订阅了消息的客户端，可以接受对应topic的信息
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
+ */
 public class SubscribeMessage extends Message {
 	
 	private List<String> topicFilter = new ArrayList<String>();

@@ -9,9 +9,12 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
- * <li>说明 订阅存储类,存储订阅的topic,即订阅树
- * <li>作者 zer0
- * <li>创建日期 2015-4-11
+ * 订阅存储类,存储订阅的topic,即订阅树，订阅的通配符支持是此处的一个难点，</br>
+ * 根据协议P41，也可以选择不支持通配符主题过滤器，若不支持通配符过滤器，则必须</br>
+ * 拒绝含通配符过滤器的订阅请求
+ * @author zer0
+ * @version 1.0
+ * @date 2015-4-11
  */
 public class SubscribeStore {
     

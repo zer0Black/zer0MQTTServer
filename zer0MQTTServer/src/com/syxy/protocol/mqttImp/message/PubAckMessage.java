@@ -6,11 +6,12 @@ import java.nio.ByteBuffer;
 import com.syxy.protocol.mqttImp.Type;
 import com.syxy.server.ClientSession;
 
-
 /**
- * <li>MQTT协议PubAck消息类型实现类，Publish的QoS=1时确认的消息类型
- * <li>作者 zer0
- * <li>创建日期 2015-3-5
+ * MQTT协议PubAck消息类型实现类，Publish的QoS=1时确认的消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
  */
 public class PubAckMessage extends Message {
 	

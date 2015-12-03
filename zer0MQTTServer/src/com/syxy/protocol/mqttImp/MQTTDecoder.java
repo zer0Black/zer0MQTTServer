@@ -21,11 +21,12 @@ import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 
 /**
- * <li>说明 MQTT协议解码
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  MQTT协议解码
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
-
 public class MQTTDecoder implements IDecoderHandler {
 	
 	private final static Logger Log = Logger.getLogger(MQTTDecoder.class);

@@ -12,11 +12,12 @@ import com.syxy.server.ClientSession;
 import com.syxy.server.TcpServer;
 
 /**
- * <li>说明 异步接收链接
- * <li>作者 zer0
- * <li>创建日期 2015-2-14
+ * 异步接收链接
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-14
  */
-
 public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketChannel, TcpServer>{
 
 	private final static Logger Log = Logger.getLogger(AioAcceptHandler.class);
@@ -40,9 +41,7 @@ public class AioAcceptHandler implements CompletionHandler<AsynchronousSocketCha
 					attachment.getWriteHandler(),
 					attachment);
 			index = attachment.getKeyIndex().incrementAndGet();
-//			client.setIndex(index);// 设置索引
-//			attachment.getClients().put(index, client);// 放入到连接中
-			
+
 			client.registeHandler(attachment.getCoderHandler(), attachment.getDecoderHandler(), attachment.getProcessHandler());
 			
 			//建立连接以后开启读事件

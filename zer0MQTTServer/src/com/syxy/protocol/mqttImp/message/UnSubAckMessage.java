@@ -7,6 +7,13 @@ import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 
+/**
+ * MQTT协议UnSubAck消息类型实现类，对UnSubscribe包的确认
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
+ */
 public class UnSubAckMessage extends Message {
 
 	private static int UNSUBACK_SIZE = 2;

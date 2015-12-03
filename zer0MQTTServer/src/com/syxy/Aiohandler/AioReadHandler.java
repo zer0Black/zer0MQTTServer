@@ -8,11 +8,12 @@ import com.syxy.server.ClientSession;
 import com.syxy.server.TcpServer;
 
 /**
- * <li>说明 异步读取数据
- * <li>作者 zer0
- * <li>创建日期 2015-2-14
+ * 异步读取数据
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-14
  */
-
 public class AioReadHandler implements CompletionHandler<Integer, ClientSession>{
 
 	private final static Logger Log = Logger.getLogger(AioReadHandler.class);
@@ -24,7 +25,6 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 	
 	@Override
 	public void completed(Integer result, ClientSession client) {
-		// TODO Auto-generated method stub
 		if (result < 0) {// 客户端关闭了连接  
 			client.close();  
 		    return;  
@@ -48,7 +48,6 @@ public class AioReadHandler implements CompletionHandler<Integer, ClientSession>
 	public void failed(Throwable exc, ClientSession client) {
 		Log.warn("客户端(" + client.getIp() + ") 读操作失败");  
 		Log.debug("错误代码"+exc);
-//		this.tcpServer.getReadHandlerThread().processResponse(client);
 	}
 	
 	public void cancelled(ClientSession client) {  

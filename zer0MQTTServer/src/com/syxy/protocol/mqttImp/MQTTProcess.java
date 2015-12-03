@@ -21,11 +21,12 @@ import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.server.ClientSession;
 
 /**
- * <li>说明 MQTT协议业务处理
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  MQTT协议业务处理
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
-
 public class MQTTProcess implements IProcessHandler {
 
 	MapDBPersistentStore storage = new MapDBPersistentStore();

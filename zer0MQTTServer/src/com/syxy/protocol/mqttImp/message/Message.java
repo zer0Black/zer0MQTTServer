@@ -15,9 +15,11 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 
 /**
- * <li>定义MQTT协议固定头部，并作为细分的message的基类
- * <li>作者 zer0
- * <li>创建日期 2015-3-2
+ * 定义MQTT协议固定头部，并作为细分的message的基类
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-2
  */
 public abstract class Message {
 	
@@ -45,60 +47,60 @@ public abstract class Message {
 	}
 	
 	/**
-	 * <li>方法名 encode
-	 * <li>返回类型 byte[]
-	 * <li>说明 对MQTT协议进行编码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-2
+	 * 对MQTT协议进行编码
+	 * @return byte[] 
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-2
 	 */
 	public abstract byte[] encode() throws IOException;
 
 	/**
-	 * <li>方法名 decode
-	 * <li>@param buffer
-	 * <li>返回类型 Message
-	 * <li>说明 对MQTT协议头部进行解码，并返回整个类
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-2
+	 * 对MQTT协议头部进行解码，并返回整个类
+	 * @param buffer
+	 * @return Message
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-2
 	 */
 	public abstract Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException;
 
 	/**
-	 * <li>方法名 messageLength
-	 * <li>返回类型 int
-	 * <li>说明 计算整个协议的字节数(可变协议头+消息体)
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-3
+	 * 计算整个协议的字节数(可变协议头+消息体)
+	 * @param msg
+	 * @return int
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-3
 	 */
 	public abstract int messageLength(Message msg);
 	
 	/**
-	 * <li>方法名 isMessageIdRequired
-	 * <li>返回类型 boolean
-	 * <li>说明 所有消息类型都需要实现该函数，告知是否需要包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 所有消息类型都需要实现该函数，告知是否需要包ID
+	 * @return boolean
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public abstract boolean isMessageIdRequired();
 	
 	/**
-	 * <li>方法名 releaseMessageId
-	 * <li>@param msgId
-	 * <li>返回类型 void
-	 * <li>说明释放不用的包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 释放不用的包ID
+	 * @param msgId
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-3
 	 */
 	public synchronized void releaseMessageId(int msgId) {
 		inUseMsgIds.remove(new Integer(msgId));
 	}
 	
 	/**
-	 * <li>方法名 getNextMessageId
-	 * <li>返回类型 int
-	 * <li>说明 获取包ID
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 获取包ID
+	 * @return int
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public static synchronized int getNextMessageId(){
 		int startingMessageId = nextMsgId;
@@ -122,11 +124,11 @@ public abstract class Message {
 	}
 	
 	/**
-	 * <li>方法名 encodePackageID
-	 * <li>返回类型 byte[]
-	 * <li>说明 对MQTT协议的PackageID进行编码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 对MQTT协议的PackageID进行编码
+	 * @return byte[]
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public byte[] encodePackageID() throws IOException{
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -137,12 +139,12 @@ public abstract class Message {
 	}
 
 	/**
-	 * <li>方法名 decodePackageID
-	 * <li>@param byteBuffer
-	 * <li>返回类型 int
-	 * <li>说明对MQTT协议的PackageID进行解码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 对MQTT协议的PackageID进行解码
+	 * @param byteBuffer
+	 * @return int
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public int decodePackageID(ByteBuffer byteBuffer) throws IOException{
 		InputStream in = new ByteArrayInputStream(byteBuffer.array());
@@ -191,7 +193,7 @@ public abstract class Message {
 	public void setQos(QoS qos) {
 		this.headerMessage.qos = qos;
 	}
-//
+	
 	public boolean isRetain() {
 		return headerMessage.retain;
 	}
@@ -203,10 +205,12 @@ public abstract class Message {
 	
 	
 	/****************************************************************
-	 * <li>MQTT协议头类
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-2
-	 ****************************************************************/
+	 * MQTT协议头类
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-2
+	 *****************************************************************/
 	public static class HeaderMessage extends Message{
 		
 		private static int HEADER_SIZE = 2;
@@ -252,13 +256,10 @@ public abstract class Message {
 			}else{
 				return null;
 			}
-			
-			
 		}
 		
 		@Override
 		public HeaderMessage decode(ByteBuffer byteBuffer, int messageLength) throws IOException {
-			// TODO Auto-generated method stub
 			byte headerData = byteBuffer.get();
 			HeaderMessage header = new HeaderMessage();
 			
@@ -272,19 +273,16 @@ public abstract class Message {
 			header.setQos(qos);
 			header.setRetain(retain);	
 			
-			//读完以后将已读的数据移除
-//			BufferPool.removeReadedData(byteBuffer);
-
 			return header;
 		}	
-		
+
 		/**
-		 * <li>方法名 bytesToLength
-		 * <li>@param byteBuffer
-		 * <li>返回类型 int
-		 * <li>说明 对MQTT协议进行编码
-		 * <li>作者 zer0
-		 * <li>创建日期 2015-3-3
+		 * 对MQTT协议进行编码
+		 * @param byteBuffer
+		 * @return int
+		 * @author zer0
+		 * @version 1.0
+		 * @date 2015-3-3
 		 */
 		private int bytesToLength(ByteBuffer byteBuffer) throws IOException {
 		    int multiplier = 1;
@@ -298,14 +296,14 @@ public abstract class Message {
 		    
 		    return length;
 		}
-		
+
 		/**
-		 * <li>方法名 lengthToBytes
-		 * <li>@param msg
-		 * <li>返回类型 ByteBuffer
-		 * <li>说明 将int数据转换成二进制并写入bytebuffer
-		 * <li>作者 zer0
-		 * <li>创建日期 2015-3-3
+		 * 将int数据转换成二进制并写入bytebuffer
+		 * @param msg
+		 * @return ByteBuffer
+		 * @author zer0
+		 * @version 1.0
+		 * @date 2015-3-3
 		 */
 		public byte[] lengthToBytes(Message msg)throws IOException {
 		    int val = msg.messageLength(msg);
@@ -337,7 +335,6 @@ public abstract class Message {
 
 		@Override
 		public boolean isMessageIdRequired() {
-			// TODO Auto-generated method stub
 			return false;
 		}
 		

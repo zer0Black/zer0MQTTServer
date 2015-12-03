@@ -11,9 +11,11 @@ import com.alibaba.druid.pool.DruidDataSourceFactory;
 import com.alibaba.druid.pool.DruidPooledConnection;
 
 /**
- * <li>说明 数据库连接类，处理了连接池和数据库打开关闭操作
- * <li>作者 zer0
- * <li>创建日期 2015-6-30
+ *  数据库连接类，处理了连接池和数据库打开关闭操作
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-6-30
  */
 public class DBConnection {
 
@@ -44,14 +46,16 @@ public class DBConnection {
 	public DruidPooledConnection  openConnection() throws SQLException {
 			return ds.getConnection();
 	}   
-	
-	 /**
-		 * <li>方法名 closeConnection
-		 * <li>返回类型 void
-		 * <li>说明 关闭数据库连接
-		 * <li>作者 zer0
-		 * <li>创建日期 2015-7-7
-	     */
+
+	/**
+	 * 关闭数据库连接
+	 * @param connection
+	 * @param statement
+	 * @param resultSet
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-7-7
+	 */
 	public void closeConnection(DruidPooledConnection connection,Statement statement,ResultSet resultSet) {
 		if (resultSet!=null) {
 			try {

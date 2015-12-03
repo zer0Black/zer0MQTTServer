@@ -1,19 +1,19 @@
 package com.syxy.protocol.mqttImp.process.subscribe;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 import com.syxy.protocol.mqttImp.QoS;
 
-
 /**
- * <li>说明 订阅的树节点，保存订阅的每个节点的信息
- * <li>作者 zer0
- * <li>创建日期 2015-4-11
+ *  订阅的树节点，保存订阅的每个节点的信息
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-4-11
  */
 public class Subscription implements Serializable{
-	
+
+	private static final long serialVersionUID = 6159635655653102856L;
 	QoS requestedQos; //max QoS acceptable
     String topicFilter;
     String clientID;

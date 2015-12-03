@@ -7,21 +7,21 @@ import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.server.ClientSession;
 
 /**
- * <li>说明 协议编码接口
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  协议编码接口
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
-
 public interface ICoderHandler {
 
 	/**
-	 * <li>方法名 process
-	 * <li>@param str
-	 * <li>返回类型 ByteBuffer
-	 * <li>说明 对处理后的结果数据进行编码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-16
-	 * @throws IOException 
+	 *  对处理后的结果数据进行编码
+	 * @param str
+	 * @return ByteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-16
 	 */
 	public ByteBuffer process(Message msg) throws IOException;
 	

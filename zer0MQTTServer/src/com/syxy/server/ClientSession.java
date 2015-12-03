@@ -17,15 +17,18 @@ import com.syxy.protocol.ICoderHandler;
 import com.syxy.protocol.IDecoderHandler;
 import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.Message;
+import com.syxy.server.job.KeepAliveJob;
 import com.syxy.util.BufferPool;
 import com.syxy.util.Constant;
+import com.syxy.util.QuartzManager;
 
 /**
- * <li>说明 客户session，每个连接一个ClientSession对象，用于处理客户请求和响应
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  客户session，每个连接一个ClientSession对象，用于处理客户请求和响应
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
-
 public class ClientSession {
 
 	private final static Logger Log = Logger.getLogger(ClientSession.class);
@@ -58,15 +61,14 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 registeHandler
-	 * <li>@param coderHandler
-	 * <li>@param decoderHandler
-	 * <li>@param processHandler
-	 * <li>返回类型 void
-	 * <li>说明 把编码，解码和协议处理器注册给client，方便client读数据，写数据
-	 *         的时候编码，解码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-20
+	 * 把编码，解码和协议处理器注册给client，方便client读数据，写数据
+	 * 的时候编码，解码
+	 * @param coderHandler
+	 * @param decoderHandler
+	 * @param processHandler
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-20
 	 */
 	public void registeHandler(ICoderHandler coderHandler, IDecoderHandler decoderHandler, IProcessHandler processHandler){
 		this.coderHandler = coderHandler;
@@ -75,11 +77,11 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 readEvent
-	 * <li>返回类型 void
-	 * <li>说明 读请求事件，调用AioReadHandler处理读事件
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-21
+	 * 读请求事件，调用AioReadHandler处理读事件
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-21
 	 */
 	public void readEvent(){
 		try {
@@ -98,11 +100,13 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 readRequest
-	 * <li>返回类型 boolean
-	 * <li>说明 读请求完成后，将得到的缓冲区写入程序的另一个缓冲区，如果此缓冲区进行解码处理，以便能识别
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-21
+	 * 读请求完成后，将得到的缓冲区写入程序的另一个缓冲区，
+	 * 如果此缓冲区进行解码处理，以便能识别
+	 * 
+	 * @return boolean
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-21
 	 */
 	public boolean readRequest(){
 		Log.info("进行解码处理");	
@@ -119,13 +123,13 @@ public class ClientSession {
 		
 		return returnValue;
 	}
-	
+
 	/**
-	 * <li>方法名 close
-	 * <li>返回类型 void
-	 * <li>说明 关闭socket连接
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-21
+	 * 关闭socket连接
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-21
 	 */
 	public void close(){
 		try{
@@ -144,11 +148,12 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 getIp
-	 * <li>返回类型 String
-	 * <li>说明 获取客户端IP地址
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-22
+	 * 获取客户端IP地址
+	 * 
+	 * @param String
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-22
 	 */
 	public String getIp(){		
 		try {
@@ -160,11 +165,11 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 process
-	 * <li>返回类型 void
-	 * <li>说明 处理读取的数据，在处理的函数中来调用回写函数，并告诉回写函数该写哪些内容
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-22
+	 * 处理读取的数据，在处理的函数中来调用回写函数，并告诉回写函数该写哪些内容
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-22
 	 */
 	public void process(){
 		try{
@@ -176,25 +181,24 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 processBlankRead
-	 * <li>返回类型 void
-	 * <li>说明 处理读取到的数据为空的情况
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-22
+	 * 处理读取到的数据为空的情况
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-22
 	 */
 	public void processBlankRead(){
 		//暂不处理
-//		this.close();
 	}
 	
 	/**
-	 * <li>方法名 writeMsgToEveryOne
-	 * <li>@param msg
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 对消息类型编码并回写给所有客户端，由协议业务处理类调用
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-4
+	 * 对消息类型编码并回写给所有客户端，由协议业务处理类调用
+	 * 
+	 * @param msg
+	 * @param byteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-3-4
 	 */
 	public void writeMsgToReqClient(Message msg){
 		try {
@@ -208,13 +212,13 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 encodeProtocol
-	 * <li>@param msg
-	 * <li>返回类型 void
-	 * <li>说明 对协议进行编码，针对相应消息类型编码
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-4
-	 * @throws IOException 
+	 * 对协议进行编码，针对相应消息类型编码
+	 * 
+	 * @param msg
+	 * @return ByteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-3-4
 	 */
 	private ByteBuffer encodeProtocol(Message msg) throws IOException{
 		if (msg != null) {
@@ -225,56 +229,31 @@ public class ClientSession {
 	}
 	
 	/**
-	 * <li>方法名 keepAliveHandler
-	 * <li>返回类型 void
-	 * <li>说明 处理心跳包动作，超过心跳包时长的1.5呗时间未接收到心跳包数据，则视为与客户端与服务器失去连接，断开客户连接
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-6-29
-	 * @throws IOException 
+	 *  处理心跳包动作，超过心跳包时长的2倍时间未接收到心跳包数据，则视为与客户端与服务器失去连接，断开客户连接
+	 * 
+	 * @param flag
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-6-29
 	 */
 	public void keepAliveHandler(String flag){
-		//TODO
 		int keepAlive = (int)getAttributesKeys(Constant.KEEP_ALIVE);
-		Timer timer = new Timer();
-		TimeOutTask tt=new TimeOutTask(keepAlive);
+		Map<String, Object> jobParam = new HashMap<String, Object>();
+		jobParam.put("ProtocolProcess", this);
 		if (flag.equals(Constant.CONNECT_ARRIVE)) {
-	        timer.schedule(tt, (long) (keepAlive*1.5f));
+			QuartzManager.addJob("keepAlive", "keepAlives", "keepAlive", "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
 		}else if (flag.equals(Constant.PING_ARRIVE)) {
-			tt.cancel();//取消当前的timeout任务
-	        tt = new TimeOutTask(keepAlive);
-	        timer.schedule (tt, (long) (keepAlive*1.5f));//重新开始计时
+			QuartzManager.resetJob("keepAlive", "keepAlives", "keepAlive", "keepAlives", KeepAliveJob.class, keepAlive*2, jobParam);
 		}
 	}
 	
 	/**
-	 * <li>说明 心跳包时间控制器，到时间以后则断开连接
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-6-30
-	 */
-	class TimeOutTask extends TimerTask{
-
-		private int keepAliveTime = 0;
-		
-		public TimeOutTask(int keepAliveTime) {
-			this.keepAliveTime = keepAliveTime;
-		}
-		
-		@Override
-		public void run() {
-			Log.info("已经"+ keepAliveTime*1.5f +"毫秒未收到心跳包,应断开连接");
-			this.cancel();
-			close();
-		}
-		
-	}
-	
-	/**
-	 * <li>方法名 sendMsgToReqClient
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 回写数据给请求的客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-4
+	 *  回写数据给请求的客户端
+	 * 
+	 * @param byteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-3-4
 	 */
 	private void sendMsgToReqClient(ByteBuffer byteBuffer) throws Exception{
 		this.socketChannel.write(byteBuffer, this, this.writeHandler);

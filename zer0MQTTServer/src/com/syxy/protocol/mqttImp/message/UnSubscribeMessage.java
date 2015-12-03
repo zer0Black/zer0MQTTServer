@@ -13,6 +13,13 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 
+/**
+ * MQTT协议UnSubscribe消息类型实现类，用于取消订阅topic
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
+ */
 public class UnSubscribeMessage extends Message {
 	
 	private List<String> topicFilter = new ArrayList<String>();

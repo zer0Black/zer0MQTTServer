@@ -11,20 +11,22 @@ import java.util.regex.Pattern;
 import sun.rmi.runtime.Log;
 
 /**
- * <li>说明 字符串工具类
- * <li>作者 zer0
- * <li>创建日期 2015-2-19
+ * 字符串工具类
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-19
  */
-
 public class StringTool {
 
 	/**
-	 * <li>方法名 isBlank
-	 * <li>@param str
-	 * <li>返回类型 boolean
-	 * <li>说明 判断字符串是否为空
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-19
+	 * 判断字符串是否为空
+	 * 
+	 * @param str
+	 * @return boolean
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-2-19
 	 */
 	public static boolean isBlank(String str){
 		if(str==null){
@@ -43,12 +45,13 @@ public class StringTool {
 	}
 	
 	/**
-	 * <li>方法名 stringToByte
-	 * <li>@param string
-	 * <li>返回类型 byte[]
-	 * <li>说明 将字符串转换为byte数组
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-3
+	 * 将字符串转换为byte数组
+	 * 
+	 * @param string
+	 * @return byte[]
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-3
 	 */
 	public static byte[] stringToByte(String string) {
 		if (string == null) {
@@ -65,12 +68,13 @@ public class StringTool {
 	}
 	
 	/**
-	 * <li>方法名 generalRandomString
-	 * <li>@param length
-	 * <li>返回类型 String
-	 * <li>说明 随机生成字符串
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-7
+	 * 随机生成字符串
+	 * 
+	 * @param length
+	 * @return String
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-7
 	 */
 	 public static String generalRandomString(int length){
 	     String str="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -84,12 +88,13 @@ public class StringTool {
 	 }
 	 
 	 /**
-		 * <li>方法名 generalMacString
-		 * <li>返回类型 String
-		 * <li>说明 随机一个mac地址
-		 * <li>作者 zer0
-		 * <li>创建日期 2015-7-7
-	     */
+		 * 随机生成一个mac地址
+		 * 
+		 * @return String
+		 * @author zer0
+		 * @version 1.0
+		 * @date  2015-7-7
+		 */
 	 public static String generalMacString(){
 		 String str = "ABCDEF0123456789";
 		 Random random = new Random();
@@ -108,12 +113,14 @@ public class StringTool {
 	 }
 	 
 	 /**
-		 * <li>方法名 isMacString
-		 * <li>返回类型 boolean
-		 * <li>说明 判断字符串是否为mac地址
-		 * <li>作者 zer0
-		 * <li>创建日期 2015-7-7
-	     */
+		 * 判断字符串是否为mac地址
+		 * 
+		 * @param str
+		 * @return boolean
+		 * @author zer0
+		 * @version 1.0
+		 * @date  2015-7-7
+		 */
 	 public static boolean isMacString(String str){
 		 String pattern = "^([A-Fa-f\\d]{2}[-:])([A-Fa-f\\d]{2}[-:]){4}([A-Fa-f\\d]{2})$";
 		 Pattern pat = Pattern.compile(pattern); 

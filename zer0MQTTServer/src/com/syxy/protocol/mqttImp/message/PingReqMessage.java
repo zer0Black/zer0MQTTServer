@@ -9,6 +9,13 @@ import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 
+/**
+ * MQTT协议PingReq消息类型实现类，客户端心跳包消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-2
+ */
 public class PingReqMessage extends Message {
 
 	private final static Logger Log = Logger.getLogger(PingReqMessage.class);
@@ -39,13 +46,11 @@ public class PingReqMessage extends Message {
 
 	@Override
 	public int messageLength(Message msg) {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	

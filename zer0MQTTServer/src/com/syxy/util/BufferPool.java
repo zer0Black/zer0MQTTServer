@@ -7,9 +7,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.log4j.Logger;
 
 /**
- * <li>缓冲池
- * <li>作者 zer0
- * <li>创建日期 2015-3-5
+ * 缓冲池
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
  */
 public class BufferPool{
 	private static Logger log = Logger.getLogger(BufferPool.class);// 日志记录器
@@ -61,11 +63,12 @@ public class BufferPool{
 	}
 	
 	/**
-	 * <li>方法名 getBuffer
-	 * <li>返回类型 ByteBuffer
-	 * <li>说明 获取缓冲区
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 获取缓冲区
+	 * 
+	 * @return ByteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public ByteBuffer getBuffer(){
 		ByteBuffer bytebuffer = this.queue.poll();
@@ -81,12 +84,12 @@ public class BufferPool{
 	}
 	
 	/**
-	 * <li>方法名 releaseBuffer
-	 * <li>@param bytebuffer
-	 * <li>返回类型 void
-	 * <li>说明 释放缓冲区
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 释放缓冲区
+	 * 
+	 * @param bytebuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public void releaseBuffer(ByteBuffer bytebuffer){
 		if(this.createCount.intValue() > maxBufferPoolSize && (this.usableCount.intValue() > (this.createCount.intValue() / 2) ) ){
@@ -99,12 +102,12 @@ public class BufferPool{
 	}
 	
 	/**
-	 * <li>方法名 removeReadedData
-	 * <li>@param byteBuffer
-	 * <li>返回类型 void
-	 * <li>说明 移除bytebuffer中的已读数据
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-5
+	 * 移除bytebuffer中的已读数据
+	 * 
+	 * @param byteBuffer
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-3-5
 	 */
 	public static void removeReadedData(ByteBuffer byteBuffer){
 		byteBuffer.compact();

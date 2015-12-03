@@ -14,11 +14,12 @@ import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 
-
 /**
- * <li>MQTT协议Publish消息类型实现类，发布消息的消息类型
- * <li>作者 zer0
- * <li>创建日期 2015-3-5
+ * MQTT协议Publish消息类型实现类，发布消息的消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
  */
 public class PublishMessage extends Message {
 	
@@ -60,7 +61,6 @@ public class PublishMessage extends Message {
 
 	@Override
 	public Message decode(ByteBuffer byteBuffer, int messageLength) throws IOException {
-		// TODO Auto-generated method stub
 		InputStream in = new ByteArrayInputStream(byteBuffer.array());
 		DataInputStream dataInputStream = new DataInputStream(in);
 		
@@ -101,7 +101,6 @@ public class PublishMessage extends Message {
 
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return true;
 	}
 	

@@ -25,9 +25,11 @@ import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 import com.syxy.util.MqttTool;
 
 /**
- * <li>说明 对数据进行保存，视情况决定是临时保存还是持久化保存
- * <li>作者 zer0
- * <li>创建日期 2015-7-7
+ *  对数据进行保存，视情况决定是临时保存还是持久化保存
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-7-7
  */
 public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 

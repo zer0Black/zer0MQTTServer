@@ -7,6 +7,13 @@ import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 
+/**
+ * MQTT协议PubRel消息类型实现类，Publish的QoS=2时最终确认的消息类型，确认PubRec包
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
+ */
 public class PubRelMessage extends Message {
 
 	private static final int PUBREL_SIZE = 2;

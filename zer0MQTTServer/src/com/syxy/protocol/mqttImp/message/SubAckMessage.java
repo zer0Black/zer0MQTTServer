@@ -12,6 +12,13 @@ import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 import com.syxy.server.ClientSession;
 
+/**
+ * MQTT协议SubAck消息类型实现类，对Subscribe包的确认
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-5
+ */
 public class SubAckMessage extends Message {
 
 	private List<QoS> grantedQoSs = new ArrayList<QoS>();
@@ -35,7 +42,7 @@ public class SubAckMessage extends Message {
 		DataOutputStream dos = new DataOutputStream(byteOut);
 		
 		dos.write(this.encodePackageID());//写入包ID
-		//写入returnCOde
+		//写入returnCode
 		if(grantedQoSs!=null){
 			for(QoS qos:grantedQoSs){
 				dos.write(qos.val);

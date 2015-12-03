@@ -18,11 +18,12 @@ import com.syxy.protocol.IProcessHandler;
 import com.syxy.util.MqttTool;
 
 /**
- * <li>说明 基于JAVA AIO的,面向TCP/IP的,非阻塞式Sockect服务器框架类
- * <li>作者 zer0
- * <li>创建日期 2015-2-15
+ * 基于JAVA AIO的,面向TCP/IP的,非阻塞式Sockect服务器框架类
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-15
  */
-
 public class TcpServer {
 	
 	private final static Logger Log = Logger.getLogger(TcpServer.class);
@@ -89,14 +90,13 @@ public class TcpServer {
         }
         return INSTANCE;
     }
-	
+
 	/**
-	 * <li>方法名 startServer
-	 * <li>@param str
-	 * <li>返回类型 void
-	 * <li>说明 启动服务器
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-19
+	 * 启动服务器
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-19
 	 */
 	public void startServer(){
 		try{
@@ -108,26 +108,12 @@ public class TcpServer {
 		}
 	}
 	
-//	/**
-//	 * <li>方法名 closeServer
-//	 * <li>返回类型 void
-//	 * <li>说明 删除指定的连接
-//	 * <li>作者 zer0
-//	 * <li>创建日期 2015-2-21
-//	 */
-//	public void closeServer(Object index){
-//		ClientSession client = this.clients.remove(index);// 从本地连接中清除
-//		if(client != null){
-//			return;
-//		}
-//	}
-	
 	/**
-	 * <li>方法名 startMonitor
-	 * <li>返回类型 void
-	 * <li>说明 初始化资源
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-2-19
+	 * 初始化资源
+	 * 
+	 * @author zer0
+	 * @version 1.0
+	 * @date  2015-2-19
 	 */
 	private void startMonitor(){		
 		try{
@@ -170,14 +156,6 @@ public class TcpServer {
 	public void setWriteHandler(AioWriteHandler writeHandler) {
 		this.writeHandler = writeHandler;
 	}
-
-//	public ConcurrentHashMap<Object, ClientSession> getClients() {
-//		return clients;
-//	}
-//
-//	public void setClients(ConcurrentHashMap<Object, ClientSession> clients) {
-//		this.clients = clients;
-//	}
 
 	public AtomicInteger getKeyIndex() {
 		return keyIndex;

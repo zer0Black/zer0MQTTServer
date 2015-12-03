@@ -18,9 +18,11 @@ package com.syxy.protocol.mqttImp.process;
 import com.syxy.server.ClientSession;
 
 /**
- * <li>说明 此类是每个客户端的会话，客户端ID，cleanSession的保存
- * <li>作者 zer0
- * <li>创建日期 2015-3-7
+ *  此类是每个客户端的会话，客户端ID，cleanSession的保存
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-7
  */
 public class ConnectionDescriptor {
     

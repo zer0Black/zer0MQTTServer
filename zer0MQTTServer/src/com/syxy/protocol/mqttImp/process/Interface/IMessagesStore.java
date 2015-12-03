@@ -10,9 +10,11 @@ import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 
 /**
- * <li>说明 消息存储接口
- * <li>作者 zer0
- * <li>创建日期 2015-05-07
+ *  消息存储接口
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-05-07
  */
 public interface IMessagesStore {
 
@@ -138,6 +140,7 @@ public interface IMessagesStore {
 	/**
 	 * 获取临时存储的Publish消息，在等待时间过后未收到对应的响应包，则重发该Publish消息
 	 * @param publishKey
+	 * @return PublishEvent
 	 * @author zer0
 	 * @version 1.0
 	 * @date 2015-11-28

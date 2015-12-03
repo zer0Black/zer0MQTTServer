@@ -6,9 +6,11 @@ import java.util.Queue;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
- * <li>说明 订阅树的节点，包含父节点、代表节点的token、子节点列表和该节点包含的客户端ID，此部分参考moquette
- * <li>作者 zer0
- * <li>创建日期 2015-4-26
+ * 订阅树的节点，包含父节点、代表节点的token、子节点列表和该节点包含的客户端ID，此部分参考moquette
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-4-26
  */
 public class TreeNode {
 	
@@ -21,14 +23,13 @@ public class TreeNode {
     	this.parent = parent;
 	}
     
-    /**
-	 * <li>方法名 addSubscription
-	 * <li>@param subscription
-	 * <li>返回类型 {@link void}
-	 * <li>说明  添加新的clientID，clientID包含在subscription中，要注意避免重复添加和qos不一致但存在的情况
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-28
-     */
+	/**
+	 * 添加新的clientID，clientID包含在subscription中，要注意避免重复添加和qos不一致但存在的情况
+	 * @param subscription
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-4-28
+	 */
     void addSubscription(Subscription subscription){
     	//避免同样的订阅添加进来
     	if (subscriptions.contains(subscription)) {
@@ -45,14 +46,13 @@ public class TreeNode {
     	subscriptions.add(subscription);
     }
     
-    /**
-	 * <li>方法名 removeSubscription
-	 * <li>@param subscription
-	 * <li>返回类型 {@link void}
-	 * <li>说明  添加新的clientID，clientID包含在subscription中，要注意避免重复添加和qos不一致但存在的情况
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-28
-     */
+	/**
+	 * 移除已订阅的主题
+	 * @param subscription
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-4-28
+	 */
     void removeSubscription(Subscription subscription){
     	//避免同样的订阅添加进来
     	if (subscriptions.contains(subscription)) {
@@ -69,26 +69,25 @@ public class TreeNode {
     	subscriptions.add(subscription);
     }
     
-    /**
-	 * <li>方法名 addChild
-	 * <li>@param child
-	 * <li>返回类型 {@link void}
-	 * <li>说明  添加子节点
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-28
-     */
+	/**
+	 * 添加子节点
+	 * @param child
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-4-28
+	 */
     void addChild(TreeNode child){
     	children.add(child);
     }
     
-     /**
-	 * <li>方法名 childWithToken
-	 * <li>@param token
-	 * <li>返回类型 {@link TreeNode}
-	 * <li>说明  查询该节点的子节点是否包含了某个token，包含了就返回节点，不包含则返回null
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-4-28
-     */
+    /**
+	 * 查询该节点的子节点是否包含了某个token，包含了就返回节点，不包含则返回null
+	 * @param token
+	 * @return TreeNode
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-4-28
+	 */
     TreeNode childWithToken(Token token) {
         for (TreeNode child : children) {
             if (child.getToken().equals(token)) {
@@ -99,12 +98,12 @@ public class TreeNode {
     }
     
     /**
-  	 * <li>方法名 getAllDescendant
-  	 * <li>返回类型 {@link List<TreeNode>}
-  	 * <li>说明  返回此节点下的所有子孙节点
-  	 * <li>作者 zer0
-  	 * <li>创建日期 2015-4-29
-     */
+   	 * 返回此节点下的所有子孙节点
+   	 * @return List<TreeNode>
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-4-29
+   	 */
     List<TreeNode> getAllDescendant() {
         List<TreeNode> treeNodes = new ArrayList<TreeNode>();
         if (this.children.size() > 0) {
@@ -116,14 +115,13 @@ public class TreeNode {
     }
 
     /**
-  	 * <li>方法名 getSubscription
-  	 * <li>param tokens
-  	 * <li>param matchingSubs
-  	 * <li>返回类型 {@link void}
-  	 * <li>说明  返回此节点下的所有子孙节点
-  	 * <li>作者 zer0
-  	 * <li>创建日期 2015-5-04
-     */
+   	 * 取出主题匹配的订阅
+   	 * @param tokens
+   	 * @param matchingSubs
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-04
+   	 */
     void getSubscription(Queue<Token> tokens, List<Subscription> matchingSubs){
     	Token t = tokens.poll();
     	//如果t为null，正面已经取到最后一个token，这时候就直接取出该节点的客户端列表
@@ -141,13 +139,12 @@ public class TreeNode {
     }
     
     /**
-  	 * <li>方法名 removeClientSubscription
-  	 * <li>param clientID
-  	 * <li>返回类型 {@link void}
-  	 * <li>说明  移除该节点以及其所有子节点中包含的此clientID
-  	 * <li>作者 zer0
-  	 * <li>创建日期 2015-5-04
-     */
+   	 * 移除该节点以及其所有子节点中包含的此clientID
+   	 * @param clientID
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-04
+   	 */
     void removeClientSubscription(String clientID){
     	List<Subscription> subsToRemove = new ArrayList<Subscription>();
     	for (Subscription s : subscriptions) {

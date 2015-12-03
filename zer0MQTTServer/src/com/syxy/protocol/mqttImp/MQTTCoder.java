@@ -10,11 +10,12 @@ import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
 
 /**
- * <li>说明 MQTT协议编码
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  MQTT协议编码
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
-
 public class MQTTCoder implements ICoderHandler {
 	
 	private final static Logger Log = Logger.getLogger(MQTTCoder.class);

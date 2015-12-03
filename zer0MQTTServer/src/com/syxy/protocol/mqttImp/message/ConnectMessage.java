@@ -17,9 +17,11 @@ import com.syxy.util.StringTool;
 import com.syxy.util.coderTool;
 
 /**
- * <li>MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型
- * <li>作者 zer0
- * <li>创建日期 2015-3-2
+ * MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-3-2
  */
 public class ConnectMessage extends Message {
 
@@ -161,7 +163,6 @@ public class ConnectMessage extends Message {
 	
 	@Override
 	public boolean isMessageIdRequired() {
-		// TODO Auto-generated method stub
 		return false;
 	}
 	

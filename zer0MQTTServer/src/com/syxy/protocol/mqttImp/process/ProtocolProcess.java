@@ -6,13 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import javax.annotation.processing.Messager;
-
 import org.apache.log4j.Logger;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import test.client;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
@@ -35,19 +29,21 @@ import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
-import com.syxy.protocol.mqttImp.process.event.QuartzManager;
 import com.syxy.protocol.mqttImp.process.event.job.RePubRelJob;
 import com.syxy.protocol.mqttImp.process.event.job.RePublishJob;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
 import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
+import com.syxy.util.QuartzManager;
 import com.syxy.util.StringTool;
 
 /**
- * <li>说明 协议所有的业务处理都在此类，注释中所指协议为MQTT3.3.1协议
- * <li>作者 zer0
- * <li>创建日期 2015-2-16
+ *  协议所有的业务处理都在此类，注释中所指协议为MQTT3.3.1协议英文版
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-2-16
  */
 public class ProtocolProcess {
 
@@ -102,15 +98,14 @@ public class ProtocolProcess {
 		this.subscribeStore = new SubscribeStore();
 	}
 	
-	/**
-	 * <li>方法名 processConnect
-	 * <li>@param client
-	 * <li>@param connectMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的CONNECT消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-3-7
-	 */
+    /**
+   	 * 处理协议的CONNECT消息类型
+   	 * @param clientID
+   	 * @param connectMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-3-7
+   	 */
 	public void processConnect(ClientSession client, ConnectMessage connectMessage){
 		Log.info("处理Connect的数据");
 		//首先查看保留位是否为0，不为0则断开连接,协议P24
@@ -132,9 +127,19 @@ public class ProtocolProcess {
 		
 		//处理clientID为null或长度为0的情况，协议P29
 		if (connectMessage.getClientId() == null || connectMessage.getClientId().length() == 0) {
-			//clientID为null的时候，cleanSession只能为1,此时给client设置一个随即的mac地址为ID，否则，断开连接
+			//clientID为null的时候，cleanSession只能为1,此时给client设置一个随机的，不存在的mac地址为ID，否则，断开连接
 			if (connectMessage.isCleanSession()) {
-				connectMessage.setClientId(StringTool.generalMacString());
+				boolean isExist = true;
+				String macClientID = StringTool.generalMacString();
+				while (isExist) {
+					ConnectionDescriptor connectionDescriptor = clients.get(macClientID);
+					if (connectionDescriptor == null) {
+						connectMessage.setClientId(macClientID);
+						isExist = false;
+					} else {
+						macClientID = StringTool.generalMacString();
+					}
+				}
 			} else {
 				Log.info("客户端ID为空，cleanSession为0，根据协议，不接收此客户端");
 				client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
@@ -239,14 +244,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPublic
-	 * <li>@param client
-	 * <li>@param publishMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的publish消息类型,该方法先把public需要的事件提取出来
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-18
-	 */
+   	 * 处理协议的publish消息类型,该方法先把public需要的事件提取出来
+   	 * @param clientID
+   	 * @param publishMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-18
+   	 */
 	public void processPublic(ClientSession client, PublishMessage publishMessage){
 		Log.info("处理publish的数据");
 		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
@@ -260,14 +264,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPublic
-	 * <li>@param client
-	 * <li>@param willMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理遗言消息的发送
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-26
-	 */
+   	 * 处理遗言消息的发送
+   	 * @param clientID
+   	 * @param willMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-26
+   	 */
 	public void processPublic(ClientSession client, WillMessage willMessage){
 		Log.info("处理遗言的publish数据");
 		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
@@ -280,18 +283,17 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPublic
-	 * <li>@param client
-	 * <li>@param topic
-	 * <li>@param qos
-	 * <li>@param message
-	 * <li>@param retain
-	 * <li>@param PackgeID
-	 * <li>返回类型 void
-	 * <li>说明 根据协议进行具体的处理，处理不同的Qos等级下的public事件
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-19
-	 */
+   	 * 根据协议进行具体的处理，处理不同的Qos等级下的public事件
+   	 * @param client
+   	 * @param topic
+   	 * @param qos
+   	 * @param recRetain
+   	 * @param message
+   	 * @param topic
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-19
+   	 */
 	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, byte[] message, Integer packgeID){
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+packgeID+"}");
 		String publishKey = null;
@@ -355,6 +357,7 @@ public class ProtocolProcess {
 			sendPubRec(clientID, packgeID);
 		}
 		
+		//处理消息是否保留，注：publish报文中的主题名不能包含通配符(协议P35)，所以retain中保存的主题名不会有通配符
 		if (recRetain) {
 			if (qos == QoS.AT_MOST_ONCE) {
 				messagesStore.cleanRetained(topic);
@@ -365,14 +368,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPubAck
-	 * <li>@param client
-	 * <li>@param pubAckMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的pubAck消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-21
-	 */
+   	 * 处理协议的pubAck消息类型
+   	 * @param client
+   	 * @param pubAckMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-21
+   	 */
 	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){		
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubAckMessage.getPackgeID();
@@ -384,16 +386,15 @@ public class ProtocolProcess {
 		 //删除离线消息
 		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
 	}
-	
+
 	/**
-	 * <li>方法名 processPubRec
-	 * <li>@param client
-	 * <li>@param pubRecMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的pubRec消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-23
-	 */
+   	 * 处理协议的pubRec消息类型
+   	 * @param client
+   	 * @param pubRecMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-23
+   	 */
 	public void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = pubRecMessage.getPackgeID();
@@ -420,14 +421,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPubRel
-	 * <li>@param client
-	 * <li>@param pubRelMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的pubRel消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-23
-	 */
+   	 * 处理协议的pubRel消息类型
+   	 * @param client
+   	 * @param pubRelMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-23
+   	 */
 	public void processPubRel(ClientSession client, PubRelMessage pubRelMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 //删除的是接收端的包ID
@@ -438,14 +438,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPubComp
-	 * <li>@param client
-	 * <li>@param pubcompMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的pubComp消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-23
-	 */
+   	 * 处理协议的pubComp消息类型
+   	 * @param client
+   	 * @param pubcompMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-23
+   	 */
 	public void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packageID = pubcompMessage.getPackgeID();
@@ -457,17 +456,15 @@ public class ProtocolProcess {
 		 QuartzManager.removeJob(pubRelkey, "pubRel", pubRelkey, "pubRel");
 		 messagesStore.removePubRelMessage(pubRelkey);
 	}
-	
+
 	/**
-	 * <li>方法名 processSubscribe
-	 * <li>@param client
-	 * <li>@param subscribeMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的subscribe消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-24
-	 * @throws Exception 
-	 */
+   	 * 处理协议的subscribe消息类型
+   	 * @param client
+   	 * @param subscribeMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-24
+   	 */
 	public void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage) { 
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
@@ -500,15 +497,15 @@ public class ProtocolProcess {
 		 }
 	}
 	
+
 	/**
-	 * <li>方法名 processUnSubscribe
-	 * <li>@param client
-	 * <li>@param unSubscribeMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的unSubscribe消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-24
-	 */
+   	 * 处理协议的unSubscribe消息类型
+   	 * @param client
+   	 * @param unSubscribeMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-24
+   	 */
 	public void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 int packgeID = unSubscribeMessage.getPackgeID();
@@ -526,14 +523,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processPingReq
-	 * <li>@param client
-	 * <li>@param pingReqMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的pingReq消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-24
-	 */
+   	 * 处理协议的pingReq消息类型
+   	 * @param client
+   	 * @param pingReqMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-24
+   	 */
 	public void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
 		 Log.info("收到心跳包");
 		 PingRespMessage pingRespMessage = new PingRespMessage();
@@ -543,14 +539,13 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 processDisconnect
-	 * <li>@param client
-	 * <li>@param disconnectMessage
-	 * <li>返回类型 void
-	 * <li>说明 处理协议的disconnect消息类型
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-24
-	 */
+   	 * 处理协议的disconnect消息类型
+   	 * @param client
+   	 * @param disconnectMessage
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-5-24
+   	 */
 	public void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
 		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
 		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
@@ -558,39 +553,32 @@ public class ProtocolProcess {
 			cleanSession(clientID);
 		 }
 		 
-//		 //如果有遗言消息，就发遗言出去
-//		 if (willStore.containsKey(clientID)) {
-//			WillMessage will = willStore.get(clientID);
-//			processPublic(client, will);
-			willStore.remove(clientID);
-//		 }
-		 
+		willStore.remove(clientID);
+
 		 this.clients.remove(clientID);
 		 client.close();
 	}
 	
 	/**
-	 * <li>方法名 cleanSession
-	 * <li>@param clientID
-	 * <li>返回类型 void
-	 * <li>说明 清除会话，除了要从订阅树中删掉会话信息，还要从会话存储中删除会话信息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-07
-	 */
+   	 * 清除会话，除了要从订阅树中删掉会话信息，还要从会话存储中删除会话信息
+   	 * @param client
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-05-07
+   	 */
 	private void cleanSession(String clientID) {
 		subscribeStore.removeForClient(clientID);
 		//从会话存储中删除信息
 		sessionStore.wipeSubscriptions(clientID);
 	}
-	
+
 	/**
-	 * <li>方法名 republishMessage
-	 * <li>@param clientID
-	 * <li>返回类型 void
-	 * <li>说明 在客户端重连以后，针对QoS1和Qos2的消息，重发存储的离线消息
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-05-18
-	 */
+   	 * 在客户端重连以后，针对QoS1和Qos2的消息，重发存储的离线消息
+   	 * @param clientID
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2015-05-18
+   	 */
 	private void republishMessage(String clientID){
 		//取出需要重发的消息列表
 		//查看消息列表是否为空，为空则返回
@@ -764,13 +752,12 @@ public class ProtocolProcess {
 	}
 	
 	/**
-	 * <li>方法名 sendPubAck
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回类型 void
-	 * <li>说明 回写PubAck消息给发来publish的客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-21
+	 *回写PubAck消息给发来publish的客户端
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-5-21
 	 */
 	private void sendPubAck(String clientID, Integer packgeID) {
 	        Log.info("发送PubAck消息给客户端");
@@ -798,13 +785,12 @@ public class ProtocolProcess {
 	    }
 	
 	/**
-	 * <li>方法名 sendPubRec
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回类型 void
-	 * <li>说明 回写PubRec消息给发来publish的客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-21
+	 *回写PubRec消息给发来publish的客户端
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-5-21
 	 */
 	private void sendPubRec(String clientID, Integer packgeID) {
 	        Log.trace("发送PubRec消息给客户端");
@@ -832,13 +818,12 @@ public class ProtocolProcess {
 	    }
 	
 	/**
-	 * <li>方法名 sendPubRel
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回类型 void
-	 * <li>说明 回写PubRel消息给发来publish的客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-23
+	 *回写PubRel消息给发来publish的客户端
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-5-23
 	 */
 	private void sendPubRel(String clientID, Integer packgeID) {
 	        Log.trace("发送PubRel消息给客户端");
@@ -866,13 +851,12 @@ public class ProtocolProcess {
 	    }
 	
 	/**
-	 * <li>方法名 sendPubComp
-	 * <li>@param clientID
-	 * <li>@param packgeID
-	 * <li>返回类型 void
-	 * <li>说明 回写PubRel消息给发来publish的客户端
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-23
+	 * 回写PubComp消息给发来publish的客户端
+	 * @param clientID
+	 * @param packgeID
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-5-23
 	 */
 	private void sendPubComp(String clientID, Integer packgeID) {
 	        Log.trace("发送PubComp消息给客户端");
@@ -900,13 +884,12 @@ public class ProtocolProcess {
 	    }
 	
 	/**
-	 * <li>方法名 subscribeSingleTopic
-	 * <li>@param newSubscription
-	 * <li>@param topic
-	 * <li>返回类型 void
-	 * <li>说明 处理一个单一订阅，存储到会话和订阅数
-	 * <li>作者 zer0
-	 * <li>创建日期 2015-5-25
+	 * 处理一个单一订阅，存储到会话和订阅数
+	 * @param newSubscription
+	 * @param topic
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-5-25
 	 */
 	private void subscribeSingleTopic(Subscription newSubscription, final String topic){
 		Log.info("订阅topic{"+topic+"},Qos为{"+newSubscription.getRequestedQos()+"}");

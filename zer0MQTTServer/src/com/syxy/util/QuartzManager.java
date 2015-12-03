@@ -1,4 +1,4 @@
-package com.syxy.protocol.mqttImp.process.event;
+package com.syxy.util;
 
 import static org.quartz.DateBuilder.futureDate;
 import static org.quartz.JobBuilder.newJob;
@@ -21,6 +21,13 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.syxy.protocol.mqttImp.process.event.job.RePublishJob;
 
+/**
+ * Quatrz调度框架的管理类，用于添加，删除，重置任务
+ * 
+ * @author zer0
+ * @version 1.0
+ * @date 2015-11-30
+ */
 public class QuartzManager {
 
 	private final static Logger Log = Logger.getLogger(QuartzManager.class);
@@ -86,7 +93,23 @@ public class QuartzManager {
 		} catch (SchedulerException e) {
 			e.printStackTrace();
 		}
-		
+	}
+	
+	/**
+	 * 重置调度任务
+	 * @param jobName
+	 * @param jobGroupName
+	 * @param triggerName
+	 * @param triggerGroupName
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2015-12-3
+	 */
+	public static void resetJob(String jobName,String jobGroupName,  
+            String triggerName,String triggerGroupName, Class jobClass,  
+            int time, Map<String, Object> jobParam){
+		removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
+		addJob(jobName, jobGroupName, triggerName, triggerGroupName, jobClass, time, jobParam);
 	}
  
 	
