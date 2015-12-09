@@ -70,7 +70,3 @@ resource 文件中包含了一些配置文件，其中 mqtt.properties 文件可
 
 5. [聂永的博客](http://www.blogjava.net/yongboy/)
 
-## <a name="5">源码</a>
-最后附上源码地址： [https://github.com/zer0Black/zer0MQTTServer](https://github.com/zer0Black/zer0MQTTServer)
-
-在github中选择分支 release-V1.0 即可。主干会持续开发，不能保证可以跑通。
