@@ -113,19 +113,18 @@ public class ClientSession {
 		Log.info("进行解码处理");	
 		boolean returnValue = false;// 返回值	,若数据处理完毕无问题，改为true
 		this.byteBuffer.flip();
-		
-//		String bufData = coderTool.decode(this.byteBuffer).toString();
-//		Log.info("读到的数据长度为"+bufData.length()+",是"+bufData);
-//		this.byteBuffer.flip();
-
+	
 		this.msg = this.decoderHandler.process(this.byteBuffer);
-		this.byteBuffer.clear();
-		//使用完缓冲区以后释放
-		BufferPool.getInstance().releaseBuffer(this.byteBuffer);
+		if (msg == null) {
+			returnValue = false;
+		}else{
+			this.byteBuffer.clear();
+			//使用完缓冲区以后释放
+			BufferPool.getInstance().releaseBuffer(this.byteBuffer);
+			returnValue = true;
+		}
 		
-		returnValue = true;
 		this.readEvent();
-		
 		return returnValue;
 	}
 
