@@ -11,7 +11,6 @@ import java.util.Hashtable;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 
 /**

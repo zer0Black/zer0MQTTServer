@@ -10,7 +10,6 @@ import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 

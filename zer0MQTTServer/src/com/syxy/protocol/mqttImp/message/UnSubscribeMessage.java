@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 

@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process;
 
+import io.netty.channel.Channel;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -34,7 +36,6 @@ import com.syxy.protocol.mqttImp.process.event.job.RePubRelJob;
 import com.syxy.protocol.mqttImp.process.event.job.RePublishJob;
 import com.syxy.protocol.mqttImp.process.subscribe.SubscribeStore;
 import com.syxy.protocol.mqttImp.process.subscribe.Subscription;
-import com.syxy.server.ClientSession;
 import com.syxy.util.Constant;
 import com.syxy.util.QuartzManager;
 import com.syxy.util.StringTool;
@@ -107,7 +108,7 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-3-7
    	 */
-	public void processConnect(ClientSession client, ConnectMessage connectMessage){
+	public void processConnect(Channel client, ConnectMessage connectMessage){
 		Log.info("处理Connect的数据");
 		//首先查看保留位是否为0，不为0则断开连接,协议P24
 		if (!connectMessage.isReservedIsZero()) {
@@ -116,7 +117,7 @@ public class ProtocolProcess {
 		}
 		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0，协议P24,P32
 		if (!connectMessage.getProtocolName().equals("MQTT") || connectMessage.getProtocolVersionNumber() != 4 ) {
-			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
+			client.writeAndFlush(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
 			client.close();//版本或协议名不匹配，则断开该客户端连接
 			return;
 		}
@@ -143,7 +144,7 @@ public class ProtocolProcess {
 				}
 			} else {
 				Log.info("客户端ID为空，cleanSession为0，根据协议，不接收此客户端");
-				client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+				client.writeAndFlush(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
 				client.close();
 				return;
 			}
@@ -152,7 +153,7 @@ public class ProtocolProcess {
 		//检查clientID的格式符合与否
 		if (!StringTool.isMacString(connectMessage.getClientId())) {
 			Log.info("客户端ID为{"+connectMessage.getClientId()+"}，拒绝此客户端");
-			client.writeMsgToReqClient(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+			client.writeAndFlush(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
 			client.close();
 			return;
 		}
@@ -160,12 +161,12 @@ public class ProtocolProcess {
 		//如果会话中已经存储了这个新连接的ID，就关闭之前的clientID
 		if (clients.containsKey(connectMessage.getClientId())) {
 			Log.error("客户端ID{"+connectMessage.getClientId()+"}已存在，强制关闭老连接");
-			ClientSession oldClientSession = clients.get(connectMessage.getClientId()).getClient();
-			boolean cleanSession = (Boolean)oldClientSession.getAttributesKeys(Constant.CLEAN_SESSION); 
+			Channel oldChannel = clients.get(connectMessage.getClientId()).getClient();
+			boolean cleanSession = NettyAttrManager.getAttrCleanSession(oldChannel);
 			if (cleanSession) {
 				cleanSession(connectMessage.getClientId());
 			}
-			oldClientSession.close();
+			oldChannel.close();
 		}
 		
 		//若至此没问题，则将新客户端连接加入client的维护列表中
@@ -175,12 +176,10 @@ public class ProtocolProcess {
 		//处理心跳包时间，把心跳包时长和一些其他属性都添加到会话中，方便以后使用
 		int keepAlive = connectMessage.getKeepAlive();
 		Log.debug("连接的心跳包时长是 {" + keepAlive + "} s");
-		client.setAttributesKeys(Constant.CLIENT_ID, connectMessage.getClientId());//clientID属性用于subscribe和publish的处理
-		client.setAttributesKeys(Constant.CLEAN_SESSION, connectMessage.isCleanSession());
+		NettyAttrManager.setAttrClientId(client, connectMessage.getClientId());
+		NettyAttrManager.setAttrCleanSession(client, connectMessage.isCleanSession());
 		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接(但这里要注意把单位是s转为ms)
-		client.setAttributesKeys(Constant.KEEP_ALIVE, keepAlive *1000);
-		//开启心跳包计时验证
-		client.keepAliveHandler(Constant.CONNECT_ARRIVE, client.getAttributesKeys(Constant.CLIENT_ID)+"");
+		NettyAttrManager.setAttrKeepAlive(client, keepAlive *1000);
 		
 		//处理Will flag（遗嘱信息）,协议P26
 		if (connectMessage.isHasWill()) {
@@ -199,7 +198,7 @@ public class ProtocolProcess {
 			//此处对用户名和密码做验证
 			if (!authenticator.checkValid(userName, pwd)) {
 				ConnAckMessage badAckMessage = new ConnAckMessage(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, 0);
-				client.writeMsgToReqClient(badAckMessage);
+				client.writeAndFlush(badAckMessage);
 				return;
 			}
 		}
@@ -233,7 +232,7 @@ public class ProtocolProcess {
 			okResp.setSessionPresent(0);
 		}
 //        okResp.setPayload(jsonObject.toString());
-        client.writeMsgToReqClient(okResp);
+        client.writeAndFlush(okResp);
         Log.info("CONNACK处理完毕并成功发送");
         Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
         
@@ -252,9 +251,9 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-18
    	 */
-	public void processPublic(ClientSession client, PublishMessage publishMessage){
+	public void processPublic(Channel client, PublishMessage publishMessage){
 		Log.info("处理publish的数据");
-		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		String clientID = NettyAttrManager.getAttrClientId(client);
 		final String topic = publishMessage.getTopic();
 	    final QoS qos = publishMessage.getQos();
 	    final byte[] message = publishMessage.getData();
@@ -272,9 +271,9 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-26
    	 */
-	public void processPublic(ClientSession client, WillMessage willMessage){
+	public void processPublic(Channel client, WillMessage willMessage){
 		Log.info("处理遗言的publish数据");
-		String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+		String clientID = NettyAttrManager.getAttrClientId(client);
 		final String topic = willMessage.getTopic();
 	    final QoS qos = willMessage.getQos();
 	    final byte[] message = willMessage.getPayload();
@@ -377,8 +376,8 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-21
    	 */
-	public void processPubAck(ClientSession client, PubAckMessage pubAckMessage){		
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	public void processPubAck(Channel client, PubAckMessage pubAckMessage){		
+		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 int packgeID = pubAckMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
 		 //取消Publish重传任务
@@ -399,8 +398,8 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubRec(ClientSession client, PubRecMessage pubRecMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	public void processPubRec(Channel client, PubRecMessage pubRecMessage){
+		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 int packgeID = pubRecMessage.getPackgeID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
 		 
@@ -432,8 +431,8 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubRel(ClientSession client, PubRelMessage pubRelMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	public void processPubRel(Channel client, PubRelMessage pubRelMessage){
+		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 //删除的是接收端的包ID
 		 int packgeID = pubRelMessage.getPackgeID();
 		 
@@ -449,8 +448,8 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubComp(ClientSession client, PubcompMessage pubcompMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	public void processPubComp(Channel client, PubcompMessage pubcompMessage){
+		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 int packageID = pubcompMessage.getPackgeID();
 		 String pubRelkey = String.format("%s%d", clientID, packageID);
 		 
@@ -471,9 +470,9 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-24
    	 */
-	public void processSubscribe(ClientSession client, SubscribeMessage subscribeMessage) { 
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
-		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
+	public void processSubscribe(Channel client, SubscribeMessage subscribeMessage) { 
+		 String clientID = NettyAttrManager.getAttrClientId(client);
+		 boolean cleanSession = NettyAttrManager.getAttrCleanSession(client);
 		 Log.info("处理subscribe数据包，客户端ID={"+clientID+"},cleanSession={"+cleanSession+"}");
 		 //一条subscribeMessage信息可能包含多个Topic和Qos
 		 List<String> topicFilters = subscribeMessage.getTopicFilter();
@@ -493,7 +492,7 @@ public class ProtocolProcess {
 				 subAckMessage.addGrantedQoSs(qos);
 			 }
 			 Log.info("回写subAck消息给订阅者，包ID={"+subscribeMessage.getPackgeID()+"}");
-			 client.writeMsgToReqClient(subAckMessage);
+			 client.writeAndFlush(subAckMessage);
 		 }else{
 			try {
 				throw new Exception("订阅的主题和Qos数量不等，终端订阅");
@@ -512,8 +511,8 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-24
    	 */
-	public void processUnSubscribe(ClientSession client, UnSubscribeMessage unSubscribeMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
+	public void processUnSubscribe(Channel client, UnSubscribeMessage unSubscribeMessage){
+		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 int packgeID = unSubscribeMessage.getPackgeID();
 		 Log.info("处理unSubscribe数据包，客户端ID={"+clientID+"}");
 		 List<String> topicFilters = unSubscribeMessage.getTopicFilter();
@@ -525,24 +524,24 @@ public class ProtocolProcess {
 		 
 		 UnSubAckMessage unSubAckMessage = new UnSubAckMessage(packgeID);
 		 Log.info("回写unSubAck信息给客户端，包ID为{"+packgeID+"}");
-		 client.writeMsgToReqClient(unSubAckMessage);
+		 client.writeAndFlush(unSubAckMessage);
 	}
 	
-	/**
-   	 * 处理协议的pingReq消息类型
-   	 * @param client
-   	 * @param pingReqMessage
-   	 * @author zer0
-   	 * @version 1.0
-   	 * @date 2015-5-24
-   	 */
-	public void processPingReq(ClientSession client, PingReqMessage pingReqMessage){
-		 Log.info("收到心跳包");
-		 PingRespMessage pingRespMessage = new PingRespMessage();
-		 //重置心跳包计时器
-		 client.keepAliveHandler(Constant.PING_ARRIVE, client.getAttributesKeys(Constant.CLIENT_ID)+"");
-		 client.writeMsgToReqClient(pingRespMessage);
-	}
+//	/**
+//   	 * 处理协议的pingReq消息类型
+//   	 * @param client
+//   	 * @param pingReqMessage
+//   	 * @author zer0
+//   	 * @version 1.0
+//   	 * @date 2015-5-24
+//   	 */
+//	public void processPingReq(Channel client, PingReqMessage pingReqMessage){
+//		 Log.info("收到心跳包");
+//		 PingRespMessage pingRespMessage = new PingRespMessage();
+//		 //重置心跳包计时器
+//		 client.keepAliveHandler(Constant.PING_ARRIVE, client.getAttributesKeys(Constant.CLIENT_ID)+"");
+//		 client.writeAndFlush(pingRespMessage);
+//	}
 	
 	/**
    	 * 处理协议的disconnect消息类型
@@ -552,9 +551,9 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-24
    	 */
-	public void processDisconnet(ClientSession client, DisconnectMessage disconnectMessage){
-		 String clientID = (String) client.getAttributesKeys(Constant.CLIENT_ID);
-		 boolean cleanSession = (Boolean) client.getAttributesKeys(Constant.CLEAN_SESSION);
+	public void processDisconnet(Channel client, DisconnectMessage disconnectMessage){
+		 String clientID = NettyAttrManager.getAttrClientId(client);
+		 boolean cleanSession = NettyAttrManager.getAttrCleanSession(client);
 		 if (cleanSession) {
 			cleanSession(clientID);
 		 }
@@ -694,7 +693,7 @@ public class ProtocolProcess {
 			}
 			
 			//从会话列表中取出会话，然后通过此会话发送publish消息
-			this.clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+			this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
 		}
 	}
 	
@@ -738,7 +737,7 @@ public class ProtocolProcess {
 		}
 		
 		//从会话列表中取出会话，然后通过此会话发送publish消息
-		this.clients.get(clientID).getClient().writeMsgToReqClient(publishMessage);
+		this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
 	}
 	
 	 /**
@@ -784,7 +783,7 @@ public class ProtocolProcess {
 					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-				this.clients.get(clientID).getClient().writeMsgToReqClient(pubAckMessage);
+				this.clients.get(clientID).getClient().writeAndFlush(pubAckMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -817,7 +816,7 @@ public class ProtocolProcess {
 					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubRecMessage);
+	        	this.clients.get(clientID).getClient().writeAndFlush(pubRecMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -850,7 +849,7 @@ public class ProtocolProcess {
 					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubRelMessage);
+	        	this.clients.get(clientID).getClient().writeAndFlush(pubRelMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }
@@ -883,7 +882,7 @@ public class ProtocolProcess {
 					Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 				}	            
 	        	
-	        	this.clients.get(clientID).getClient().writeMsgToReqClient(pubcompMessage);
+	        	this.clients.get(clientID).getClient().writeAndFlush(pubcompMessage);
 	        }catch(Throwable t) {
 	            Log.error(null, t);
 	        }

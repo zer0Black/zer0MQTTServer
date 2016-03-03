@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议PingReq消息类型实现类，客户端心跳包消息类型

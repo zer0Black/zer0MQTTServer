@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议PubAck消息类型实现类，Publish的QoS=1时确认的消息类型

@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp;
 
+import io.netty.channel.Channel;
+
 import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.DisconnectMessage;
@@ -18,7 +20,6 @@ import com.syxy.protocol.mqttImp.process.Impl.dataHandler.MapDBPersistentStore;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
-import com.syxy.server.ClientSession;
 
 /**
  *  MQTT协议业务处理
@@ -36,7 +37,7 @@ public class MQTTProcess implements IProcessHandler {
 	ProtocolProcess protocolProcess = new ProtocolProcess(authenticator, messagesStore, sessionStore);
 	
 	@Override
-	public void process(Message msg, ClientSession client) {
+	public void process(Message msg, Channel client) {
 		
 		switch (msg.getType()) {
 		case CONNECT:
@@ -74,12 +75,6 @@ public class MQTTProcess implements IProcessHandler {
 			protocolProcess.processUnSubscribe(client, unSubscribeMessage);
 			break;
 		case UNSUBACK:
-			break;
-		case PINGREQ:
-			PingReqMessage pingReqMessage = (PingReqMessage)msg;
-			protocolProcess.processPingReq(client, pingReqMessage);
-			break;
-		case PINGRESP:
 			break;
 		case DISCONNECT:
 			DisconnectMessage disconnectMessage = (DisconnectMessage)msg;

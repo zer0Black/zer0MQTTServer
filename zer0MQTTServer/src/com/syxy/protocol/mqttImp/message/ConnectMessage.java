@@ -10,11 +10,8 @@ import org.apache.log4j.Logger;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
-import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
-import com.syxy.util.coderTool;
 
 /**
  * MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型

@@ -6,8 +6,6 @@ import java.nio.ByteBuffer;
 import org.apache.log4j.Logger;
 
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议PingResp消息类型实现类，客户端心跳包回应消息类型

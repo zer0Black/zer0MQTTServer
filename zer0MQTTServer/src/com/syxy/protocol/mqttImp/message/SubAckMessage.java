@@ -9,8 +9,6 @@ import java.util.List;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议SubAck消息类型实现类，对Subscribe包的确认

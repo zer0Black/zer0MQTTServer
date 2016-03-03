@@ -10,8 +10,6 @@ import java.util.List;
 
 import com.syxy.protocol.mqttImp.QoS;
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.server.ClientSession;
 import com.syxy.util.BufferPool;
 import com.syxy.util.StringTool;
 

@@ -15,7 +15,7 @@
  */
 package com.syxy.protocol.mqttImp.process;
 
-import com.syxy.server.ClientSession;
+import io.netty.channel.Channel;
 
 /**
  *  此类是每个客户端的会话，客户端ID，cleanSession的保存
@@ -27,10 +27,10 @@ import com.syxy.server.ClientSession;
 public class ConnectionDescriptor {
     
     private String clientID;
-    private ClientSession client;
+    private Channel client;
     private boolean cleanSession;
     
-    public ConnectionDescriptor(String clientID, ClientSession session, boolean cleanSession) {
+    public ConnectionDescriptor(String clientID, Channel session, boolean cleanSession) {
         this.clientID = clientID;
         this.client = session;
         this.cleanSession = cleanSession;
@@ -44,11 +44,11 @@ public class ConnectionDescriptor {
 		this.clientID = clientID;
 	}
 
-	public ClientSession getClient() {
+	public Channel getClient() {
 		return client;
 	}
 
-	public void setClient(ClientSession client) {
+	public void setClient(Channel client) {
 		this.client = client;
 	}
 

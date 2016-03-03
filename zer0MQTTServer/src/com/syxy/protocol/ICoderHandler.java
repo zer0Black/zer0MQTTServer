@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.server.ClientSession;
 
 /**
  *  协议编码接口

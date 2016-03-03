@@ -7,7 +7,6 @@ import org.apache.log4j.Logger;
 
 import com.syxy.protocol.mqttImp.Type;
 import com.syxy.protocol.mqttImp.message.Message.HeaderMessage;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议Disconnect消息类型实现类，客户端请求服务器断开连接的消息类型

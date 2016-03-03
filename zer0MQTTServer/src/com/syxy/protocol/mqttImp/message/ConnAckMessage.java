@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.Type;
-import com.syxy.server.ClientSession;
 
 /**
  * MQTT协议ConnAck消息类型实现类，连接确认消息类型

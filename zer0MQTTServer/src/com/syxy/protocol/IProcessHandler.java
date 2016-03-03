@@ -1,7 +1,8 @@
 package com.syxy.protocol;
 
+import io.netty.channel.Channel;
+
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.server.ClientSession;
 
 /**
  * 协议业务处理接口
@@ -20,6 +21,6 @@ public interface IProcessHandler {
 	 * @version 1.0
 	 * @date  2015-2-16
 	 */
-	public void process(Message msg, ClientSession client);
+	public void process(Message msg, Channel client);
 	
 }

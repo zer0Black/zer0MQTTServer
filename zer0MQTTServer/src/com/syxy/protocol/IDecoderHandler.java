@@ -3,7 +3,6 @@ package com.syxy.protocol;
 import java.nio.ByteBuffer;
 
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.server.ClientSession;
 
 /**
  *  协议解码接口
