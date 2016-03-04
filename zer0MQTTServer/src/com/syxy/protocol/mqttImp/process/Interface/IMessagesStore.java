@@ -5,7 +5,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 
-import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.message.QoS;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
 import com.syxy.protocol.mqttImp.process.event.PublishEvent;
 

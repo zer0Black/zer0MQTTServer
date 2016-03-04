@@ -2,7 +2,7 @@ package com.syxy.protocol.mqttImp.process.event;
 
 import java.io.Serializable;
 
-import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.message.QoS;
 
 /**
  *  发送消息的事件类，把协议的处理当做事件来进行就可以很好的进行封装

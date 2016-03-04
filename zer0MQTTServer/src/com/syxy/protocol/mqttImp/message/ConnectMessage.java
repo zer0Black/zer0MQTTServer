@@ -1,16 +1,5 @@
 package com.syxy.protocol.mqttImp.message;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
-
-import org.apache.log4j.Logger;
-
-import com.syxy.util.BufferPool;
-import com.syxy.util.StringTool;
-
 /**
  * MQTT协议Connect消息类型实现类，客户端请求服务器连接的消息类型
  * 

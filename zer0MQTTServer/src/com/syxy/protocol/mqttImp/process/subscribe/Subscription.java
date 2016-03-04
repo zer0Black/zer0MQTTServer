@@ -2,7 +2,7 @@ package com.syxy.protocol.mqttImp.process.subscribe;
 
 import java.io.Serializable;
 
-import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.message.QoS;
 
 /**
  *  订阅的树节点，保存订阅的每个节点的信息

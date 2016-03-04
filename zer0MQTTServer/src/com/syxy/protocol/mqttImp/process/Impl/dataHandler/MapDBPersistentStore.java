@@ -15,7 +15,7 @@ import org.apache.log4j.Logger;
 import org.mapdb.DB;
 import org.mapdb.DBMaker;
 
-import com.syxy.protocol.mqttImp.QoS;
+import com.syxy.protocol.mqttImp.message.QoS;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 import com.syxy.protocol.mqttImp.process.event.PubRelEvent;
