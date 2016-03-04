@@ -3,8 +3,6 @@ package com.syxy.protocol.mqttImp.message;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import com.syxy.protocol.mqttImp.Type;
-
 /**
  * MQTT协议PubRec消息类型实现类，Publish的QoS=2时最终确认的消息类型，确认Publish包
  * 
