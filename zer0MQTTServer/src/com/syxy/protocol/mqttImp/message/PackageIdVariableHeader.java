@@ -11,6 +11,13 @@ public class PackageIdVariableHeader {
 	
 	private int packageID;
 
+	public PackageIdVariableHeader(int packageID) {
+		if (packageID < 1 || packageID > 65535) {
+			throw new IllegalArgumentException("消息ID:" + packageID + "必须在1~65535范围内");
+		}
+		this.packageID = packageID;
+	}
+
 	public int getPackageID() {
 		return packageID;
 	}

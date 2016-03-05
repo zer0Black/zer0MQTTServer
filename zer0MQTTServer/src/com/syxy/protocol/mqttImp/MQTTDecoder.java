@@ -4,20 +4,34 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.handler.codec.mqtt.MqttQoS;
+import io.netty.handler.codec.mqtt.MqttSubAckPayload;
+import io.netty.handler.codec.mqtt.MqttSubscribePayload;
+import io.netty.handler.codec.mqtt.MqttTopicSubscription;
+import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.util.CharsetUtil;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
 import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 import com.syxy.protocol.mqttImp.MQTTDecoder.DecoderState;
+import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
+import com.syxy.protocol.mqttImp.message.ConnAckVariableHeader;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.ConnectPayload;
 import com.syxy.protocol.mqttImp.message.ConnectVariableHeader;
 import com.syxy.protocol.mqttImp.message.FixedHeader;
 import com.syxy.protocol.mqttImp.message.MessageType;
+import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
 import com.syxy.protocol.mqttImp.message.QoS;
+import com.syxy.protocol.mqttImp.message.SubAckPayload;
+import com.syxy.protocol.mqttImp.message.SubscribePayload;
+import com.syxy.protocol.mqttImp.message.TopicSubscribe;
+import com.syxy.protocol.mqttImp.message.UnSubscribePayload;
 
 /**
  *  MQTT协议解码
@@ -159,7 +173,7 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 		case CONNECT:
 			return decodeConnectVariableHeader(byteBuf);
 		case CONNACK:
-			return decodeConAckVariableHeader(byteBuf);
+			return decodeConnAckVariableHeader(byteBuf);
 		case PUBLISH:
 			return decodePublishVariableHeader(byteBuf, fixedHeader);
 		case SUBSCRIBE:
@@ -219,12 +233,33 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 	}
 	
 	/**
+	 * 解码ConnAck可变头部
+	 * @param byteBuf
+	 * @return Result<ConnAckVariableHeader>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */
+	private Result<ConnAckVariableHeader> decodeConnAckVariableHeader(ByteBuf byteBuf){
+		int useNumOfBytes = 0;//已解码字节
+		
+		boolean sessionPresent = (byteBuf.readUnsignedByte() == 0)?false:true;
+		useNumOfBytes += 1;
+		
+		byte returnCode = byteBuf.readByte();
+		useNumOfBytes += 1;
+		
+		ConnAckVariableHeader connectVariableHeader = new ConnAckVariableHeader(ConnectionStatus.valueOf(returnCode), sessionPresent);
+		return new Result<ConnAckVariableHeader>(connectVariableHeader, useNumOfBytes);
+	}
+	
+	/**
 	 * 解码Publish可变头部
 	 * @param byteBuf
 	 * @return Result<PublishVariableHeader>
 	 * @author zer0
 	 * @version 1.0
-	 * @date 2016-3-5
+	 * @date 2016-3-6
 	 */
 	private Result<PublishVariableHeader> decodePublishVariableHeader(ByteBuf byteBuf, FixedHeader fixedHeader){
 		int useNumOfBytes = 0;//已解码字节
@@ -262,6 +297,30 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 	}
 	
 	/**
+	 * 解码只有包ID的可变头部
+	 * @param byteBuf
+	 * @return Result<ConnAckVariableHeader>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */
+	private Result<PackageIdVariableHeader> decodePackageIdVariableHeader(ByteBuf byteBuf){
+		int useNumOfBytes = 0;//已解码字节
+		
+		//解析包ID
+		int packageID = byteBuf.readUnsignedShort();
+		//校验包ID
+		if (packageID == 0) {
+			throw new DecoderException("无效的包ID"+packageID);				
+		}
+		useNumOfBytes += 2;
+		
+		PackageIdVariableHeader packageIdVariableHeader = new PackageIdVariableHeader(packageID);
+		
+		return new Result<PackageIdVariableHeader>(packageIdVariableHeader, useNumOfBytes);
+	}
+	
+	/**
 	 * 解码荷载，有荷载的消息类型有connect，subscribe，suback，unsubscribe，publish
 	 * @param byteBuf
 	 * @return FixedHeader
@@ -275,17 +334,147 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 			Object variableHeader){
 		switch (messageType) {
 		case CONNECT:
+			return decodeConnectPayload(byteBuf, (ConnectVariableHeader)variableHeader);
 			
 		case PUBLISH:
+			return decodePublishPayload(byteBuf, bytesRemainVariablePart);
 		
 		case SUBSCRIBE:
+			return decodeSubscribePayload(byteBuf, bytesRemainVariablePart);
 		
 		case SUBACK:
+			return decodeSubAckPayload(byteBuf, bytesRemainVariablePart);
 			
 		case UNSUBSCRIBE:
+			return decodeUnSubscribePayload(byteBuf, bytesRemainVariablePart);
+
 		default:
 			return new Result<Object>(null, 0);
 		}
+	}
+	
+	/**
+	 * 解码connect荷载
+	 * @param byteBuf
+	 * @return Result<ConnectPayload>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */ 
+	private Result<ConnectPayload> decodeConnectPayload(ByteBuf byteBuf, ConnectVariableHeader variableHeader){
+		int useNumOfBytes = 0;//已解码字节
+		
+		Result<String> clientIDResult = decodeUTF(byteBuf);
+		String clientID = clientIDResult.getValue();
+		useNumOfBytes += clientIDResult.getUseNumOfBytes();
+		
+		Result<String> willTopicResult = null;
+	    Result<String> willMessageResult = null;
+	    if (variableHeader.isHasWill()) {
+	    	willTopicResult = decodeUTF(byteBuf);	    	
+	    	useNumOfBytes += willTopicResult.getUseNumOfBytes();
+	    	willMessageResult = decodeUTF(byteBuf);
+	    	useNumOfBytes += willMessageResult.getUseNumOfBytes();
+		}
+	    
+	    Result<String> userNameResult = null;
+        Result<String> passwordResult = null;
+	    if (variableHeader.isHasUsername()) {
+			userNameResult = decodeUTF(byteBuf);
+			useNumOfBytes += userNameResult.getUseNumOfBytes();
+		}
+	    
+	    if (variableHeader.isHasPassword()) {
+	    	passwordResult = decodeUTF(byteBuf);
+			useNumOfBytes += passwordResult.getUseNumOfBytes();
+		}
+		
+	    ConnectPayload connectPayload = new ConnectPayload(
+	    		clientID, 
+	    		willTopicResult != null?willTopicResult.getValue():null, 
+	    		willMessageResult != null?willMessageResult.getValue():null, 
+	    		userNameResult != null?userNameResult.getValue():null, 
+	    		passwordResult != null?passwordResult.getValue():null);
+	    return new Result<ConnectPayload>(connectPayload, useNumOfBytes);
+	}
+	
+	/**
+	 * 解码publish荷载
+	 * @param byteBuf
+	 * @return Result<ByteBuf>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */ 
+	private Result<ByteBuf> decodePublishPayload(ByteBuf byteBuf, int bytesRemainVariablePart){
+		int useNumOfBytes = bytesRemainVariablePart;//已解码字节
+		
+		ByteBuf b = byteBuf.readSlice(bytesRemainVariablePart).retain();
+	    return new Result<ByteBuf>(b, useNumOfBytes);
+	}
+	
+	/**
+	 * 解码subscribe荷载
+	 * @param byteBuf
+	 * @return Result<SubscribePayload>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */ 
+	private Result<SubscribePayload> decodeSubscribePayload(ByteBuf byteBuf, int bytesRemainVariablePart){
+		int useNumOfBytes = 0;//已解码字节
+		
+		final List<TopicSubscribe> subscribeTopics = new ArrayList<TopicSubscribe>();
+        while (useNumOfBytes < bytesRemainVariablePart) {
+            final Result<String> topicNameResult = decodeUTF(byteBuf);
+            useNumOfBytes += topicNameResult.getUseNumOfBytes();
+            int qos = byteBuf.readUnsignedByte() & 0x03;
+            useNumOfBytes++;
+            subscribeTopics.add(new TopicSubscribe(topicNameResult.value, QoS.valueOf(qos)));
+        }
+        return new Result<SubscribePayload>(new SubscribePayload(subscribeTopics), useNumOfBytes);
+	}
+	
+	/**
+	 * 解码suback荷载
+	 * @param byteBuf
+	 * @return Result<SubAckPayload>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */ 
+	private Result<SubAckPayload> decodeSubAckPayload(ByteBuf byteBuf, int bytesRemainVariablePart){
+		int useNumOfBytes = 0;//已解码字节
+		
+		final List<Integer> grantedQos = new ArrayList<Integer>();
+	    while (useNumOfBytes < bytesRemainVariablePart) {
+	        int qos = byteBuf.readUnsignedByte() & 0x03;
+	        useNumOfBytes++;
+	        grantedQos.add(qos);
+	    }
+	    return new Result<SubAckPayload>(new SubAckPayload(grantedQos), useNumOfBytes);
+	}
+	
+	/**
+	 * 解码UnSubscribe荷载
+	 * @param byteBuf
+	 * @return Result<UnSubscribePayload>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-6
+	 */ 
+	private Result<UnSubscribePayload> decodeUnSubscribePayload(ByteBuf byteBuf, int bytesRemainVariablePart){
+		int useNumOfBytes = 0;//已解码字节
+		
+		final List<String> unsubscribeTopics = new ArrayList<String>();
+        while (useNumOfBytes < bytesRemainVariablePart) {
+            final Result<String> topicNameResult = decodeUTF(byteBuf);
+            useNumOfBytes += topicNameResult.getUseNumOfBytes();
+            unsubscribeTopics.add(topicNameResult.value);
+        }
+        return new Result<UnSubscribePayload>(
+                new UnSubscribePayload(unsubscribeTopics),
+                useNumOfBytes);
 	}
 	
 	/**
@@ -294,7 +483,7 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 	 * @return Result<String>
 	 * @author zer0
 	 * @version 1.0
-	 * @date 2016-3-5
+	 * @date 2016-3-6
 	 */ 
 	private Result<String> decodeUTF(ByteBuf byteBuf){
 		final int MAX_LENGTH = 65535;

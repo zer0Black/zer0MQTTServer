@@ -13,6 +13,17 @@ public class ConnectPayload{
 	private String willMessage;
 	private String username;//如果设置User Name标识，可以在此读取用户名称
 	private String password;//如果设置Password标识，便可读取用户密码
+	
+	public ConnectPayload(String clientId, String willTopic,
+			String willMessage, String username, String password) {
+		super();
+		this.clientId = clientId;
+		this.willTopic = willTopic;
+		this.willMessage = willMessage;
+		this.username = username;
+		this.password = password;
+	}
+	
 	public String getClientId() {
 		return clientId;
 	}

@@ -45,7 +45,7 @@ public class ConnAckMessage extends Message {
 		}
 		
 		//通过读取到的整型来获取对应的QoS类型
-		public ConnectionStatus valueOf(int i) {
+		public static ConnectionStatus valueOf(byte i) {
 			for(ConnectionStatus q: ConnectionStatus.values()) {
 				if (q.value == i)
 					return q;

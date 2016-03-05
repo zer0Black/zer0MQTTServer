@@ -26,26 +26,7 @@ public class UnSubscribeMessage extends Message {
 		return (UnSubscribePayload)super.getPayload();
 	}
 	
-	/**
-	 * MQTT协议Connect消息类型的荷载
-	 * 
-	 * @author zer0
-	 * @version 1.0
-	 * @date 2016-3-4
-	 */
-	public class UnSubscribePayload{
-		
-		private List<String> topics;
-		
-		public List<String> getTopics() {
-			return topics;
-		}
 
-		public void setTopics(List<String> topics) {
-			this.topics = topics;
-		}
-		
-	}
 	
 //	private List<String> topicFilter = new ArrayList<String>();
 //	

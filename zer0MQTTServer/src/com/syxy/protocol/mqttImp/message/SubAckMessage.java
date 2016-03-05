@@ -27,22 +27,6 @@ public class SubAckMessage extends Message {
 		return (SubAckPayload)super.getPayload();
 	}
 	
-	/**
-	 * MQTT协议SubAck消息类型的荷载
-	 * 
-	 * @author zer0
-	 * @version 1.0
-	 * @date 2016-3-4
-	 */
-	public class SubAckPayload{
-		private List<Integer> grantedQosLevel;
-
-		public List<Integer> getGrantedQosLevel() {
-			return grantedQosLevel;
-		}
-		
-	}
-
 //	private List<QoS> grantedQoSs = new ArrayList<QoS>();
 //	
 //	public SubAckMessage(){
