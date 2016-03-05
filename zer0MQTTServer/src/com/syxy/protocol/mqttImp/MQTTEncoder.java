@@ -6,34 +6,26 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.MessageToByteEncoder;
-import io.netty.handler.codec.mqtt.MqttConnectVariableHeader;
 import io.netty.util.CharsetUtil;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import sun.awt.SunHints.Value;
-import sun.awt.image.BytePackedRaster;
-import sun.invoke.empty.Empty;
-
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
-import com.syxy.protocol.mqttImp.message.ConnectMessage.ConnectPayload;
-import com.syxy.protocol.mqttImp.message.ConnectMessage.ConnectVariableHeader;
+import com.syxy.protocol.mqttImp.message.ConnectPayload;
+import com.syxy.protocol.mqttImp.message.ConnectVariableHeader;
 import com.syxy.protocol.mqttImp.message.FixedHeader;
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.protocol.mqttImp.message.MessageType;
 import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
-import com.syxy.protocol.mqttImp.message.PublishMessage.PublishVariableHeader;
+import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
 import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.SubAckMessage.SubAckPayload;
-import com.syxy.protocol.mqttImp.message.SubscribeMessage.SubscribePayload;
-import com.syxy.protocol.mqttImp.message.SubscribeMessage.TopicSubscribe;
+import com.syxy.protocol.mqttImp.message.SubscribePayload;
+import com.syxy.protocol.mqttImp.message.SubscribePayload.TopicSubscribe;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage.UnSubscribePayload;
 

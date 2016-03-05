@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
+import io.netty.util.CharsetUtil;
 
 import java.util.List;
 
@@ -11,8 +12,11 @@ import org.apache.log4j.Logger;
 
 import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 import com.syxy.protocol.mqttImp.MQTTDecoder.DecoderState;
+import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.ConnectVariableHeader;
 import com.syxy.protocol.mqttImp.message.FixedHeader;
 import com.syxy.protocol.mqttImp.message.MessageType;
+import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
 import com.syxy.protocol.mqttImp.message.QoS;
 
 /**
@@ -151,8 +155,163 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 	 * @date 2016-3-4
 	 */
 	private Result<?> decodeVariableHeader(ByteBuf byteBuf, FixedHeader fixedHeader){
-		return new Result<FixedHeader>(fixedHeader,19);
+		switch (fixedHeader.getMessageType()) {
+		case CONNECT:
+			return decodeConnectVariableHeader(byteBuf);
+		case CONNACK:
+			return decodeConAckVariableHeader(byteBuf);
+		case PUBLISH:
+			return decodePublishVariableHeader(byteBuf, fixedHeader);
+		case SUBSCRIBE:
+		case UNSUBSCRIBE:
+		case SUBACK:
+		case UNSUBACK:
+		case PUBACK:
+		case PUBREC:
+		case PUBCOMP:
+		case PUBREL:
+			return decodePackageIdVariableHeader(byteBuf);
+		case PINGREQ:
+		case PINGRESP:
+		case DISCONNECT:
+			return new Result<Object>(null, 0);
+		default:
+			return new Result<Object>(null, 0);
+		}
 	}
+	
+	/**
+	 * 解码Connect可变头部
+	 * @param byteBuf
+	 * @return Result<ConnectVariableHeader>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-5
+	 */
+	private Result<ConnectVariableHeader> decodeConnectVariableHeader(ByteBuf byteBuf){
+		int useNumOfBytes = 0;//已解码字节
+		//解码协议名
+		Result<String> protoResult = decodeUTF(byteBuf);
+		String protoName = protoResult.getValue();
+		useNumOfBytes += protoResult.getUseNumOfBytes();
+		//解码协议级别
+		byte protoLevel = byteBuf.readByte();
+		useNumOfBytes += 1;//协议等级长度为1个字节
+		//解码连接标志
+		byte connectFlags = byteBuf.readByte();
+		boolean isHasUserName = (connectFlags & 0x80) > 0;//0x80=10000000
+		boolean isHasPassword = (connectFlags & 0x40) > 0;//0x40=01000000
+		boolean willRetain = (connectFlags & 0x20) > 0;//0x20=00100000
+		QoS willQos = QoS.valueOf(connectFlags >> 3 & 0x03);////0x03=00000011
+		boolean hasWill = (connectFlags & 0x04) > 0;//0x04=00000100
+		boolean cleanSession = (connectFlags & 0x02) > 0;//0x02=00000010
+		boolean reservedIsZero = (connectFlags & 0x01) == 0;//0x00=0000001
+		useNumOfBytes += 1;
+		//解码心跳包时长
+		int keepAlive = byteBuf.readUnsignedShort();
+		useNumOfBytes += 2;
+		
+		ConnectVariableHeader connectVariableHeader = new ConnectVariableHeader(
+				protoName, protoLevel, isHasUserName, 
+				isHasPassword, willRetain, willQos, 
+				hasWill, cleanSession, reservedIsZero, keepAlive);
+		return new Result<ConnectVariableHeader>(connectVariableHeader, useNumOfBytes);
+	}
+	
+	/**
+	 * 解码Publish可变头部
+	 * @param byteBuf
+	 * @return Result<PublishVariableHeader>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-5
+	 */
+	private Result<PublishVariableHeader> decodePublishVariableHeader(ByteBuf byteBuf, FixedHeader fixedHeader){
+		int useNumOfBytes = 0;//已解码字节
+		//解码协议名
+		Result<String> topicResult = decodeUTF(byteBuf);
+		String topicName = topicResult.getValue();
+		//publish消息中不能出现通配符，需要进行校验
+		if (!valiadPublishTopicName(topicName)) {
+			throw new DecoderException("无效的主题名：" + topicName + ",因为它包含了通配符");
+		}
+		useNumOfBytes += topicResult.getUseNumOfBytes();
+		//解析包ID
+		int packageID = -1;
+		if (fixedHeader.getQos().value() > 0) {
+			packageID = byteBuf.readUnsignedShort();
+			//校验包ID
+			if (packageID == 0) {
+				throw new DecoderException("无效的包ID"+packageID);
+			}
+			useNumOfBytes += 2;
+		}
+		PublishVariableHeader publishVariableHeader = new PublishVariableHeader(topicName, packageID);
+		
+		return new Result<PublishVariableHeader>(publishVariableHeader, useNumOfBytes);
+	}
+	
+	private boolean valiadPublishTopicName(String topicName){
+		final char[] TOPIC_WILADCARDS = {'#', '+'};
+		for (char c : TOPIC_WILADCARDS) {
+			if (topicName.indexOf(c) >= 0) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	/**
+	 * 解码荷载，有荷载的消息类型有connect，subscribe，suback，unsubscribe，publish
+	 * @param byteBuf
+	 * @return FixedHeader
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-5
+	 */
+	private Result<?> decodePayload(ByteBuf byteBuf, 
+			MessageType messageType,
+			int bytesRemainVariablePart,
+			Object variableHeader){
+		switch (messageType) {
+		case CONNECT:
+			
+		case PUBLISH:
+		
+		case SUBSCRIBE:
+		
+		case SUBACK:
+			
+		case UNSUBSCRIBE:
+		default:
+			return new Result<Object>(null, 0);
+		}
+	}
+	
+	/**
+	 * 解码UTF字符串类型，首先读取两个字节的长度，再根据此长度读取后面的数据
+	 * @param byteBuf
+	 * @return Result<String>
+	 * @author zer0
+	 * @version 1.0
+	 * @date 2016-3-5
+	 */ 
+	private Result<String> decodeUTF(ByteBuf byteBuf){
+		final int MAX_LENGTH = 65535;
+		final int MIN_LENGTH = 0;
+		
+		//读取两个字节的无符号short类型，即UTF的长度
+		int utfLength = byteBuf.readUnsignedShort();
+		if (utfLength < MIN_LENGTH || utfLength > MAX_LENGTH) {
+			throw new DecoderException("该UTF字符串长度有误，长度"+utfLength);
+		}
+		//根据长度解码出String
+		String utfStr = byteBuf.readBytes(utfLength).toString(CharsetUtil.UTF_8);
+		//计算已解码掉的长度，为字符串长度加最前面两个长度字段字节的长度
+		int useNumOfBytes = utfLength + 2;
+		return new Result<String>(utfStr, useNumOfBytes);
+	}
+	
 	
 	private static class Result<T>{
 		private final T value;
@@ -162,6 +321,15 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 			this.value = value;
 			this.useNumOfBytes = useNumOfBytes;
 		}
+
+		private T getValue() {
+			return value;
+		}
+
+		private int getUseNumOfBytes() {
+			return useNumOfBytes;
+		}
+		
 	}
 
 }

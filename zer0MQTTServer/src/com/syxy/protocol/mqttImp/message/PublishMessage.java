@@ -26,31 +26,6 @@ public class PublishMessage extends Message {
 		return (ByteBuf)super.getPayload();
 	}
 
-	/**
-	 * MQTT协议Publish消息类型的可变头部
-	 * 
-	 * @author zer0
-	 * @version 1.0
-	 * @date 2016-3-4
-	 */
-	public class PublishVariableHeader{
-		private String topic;
-		private int packageID;
-		public String getTopic() {
-			return topic;
-		}
-		public void setTopic(String topic) {
-			this.topic = topic;
-		}
-		public int getPackageID() {
-			return packageID;
-		}
-		public void setPackageID(int packageID) {
-			this.packageID = packageID;
-		}
-		
-	}
-	
 //	private String topic;
 //	private byte[] data;
 //	
