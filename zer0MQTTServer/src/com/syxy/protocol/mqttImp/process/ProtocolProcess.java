@@ -10,22 +10,19 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import com.syxy.protocol.mqttImp.MQTTMesageFactory;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
-import com.syxy.protocol.mqttImp.message.DisconnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.protocol.mqttImp.message.PingReqMessage;
-import com.syxy.protocol.mqttImp.message.PingRespMessage;
-import com.syxy.protocol.mqttImp.message.PubAckMessage;
-import com.syxy.protocol.mqttImp.message.PubRecMessage;
-import com.syxy.protocol.mqttImp.message.PubRelMessage;
-import com.syxy.protocol.mqttImp.message.PubcompMessage;
+import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.message.QoS;
 import com.syxy.protocol.mqttImp.message.SubAckMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
-import com.syxy.protocol.mqttImp.message.UnSubAckMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
+import com.syxy.protocol.mqttImp.process.Impl.IdentityAuthenticator;
+import com.syxy.protocol.mqttImp.process.Impl.dataHandler.MapDBPersistentStore;
 import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
 import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
 import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
@@ -90,13 +87,22 @@ public class ProtocolProcess {
 	private ISessionStore sessionStore;
 	private SubscribeStore subscribeStore;
 	
-	public ProtocolProcess(IAuthenticator authenticator, IMessagesStore messagesStore,
-			ISessionStore sessionStore){
-		this.authenticator = authenticator;
-		this.messagesStore = messagesStore;
+	public ProtocolProcess(){
+		MapDBPersistentStore storge = new MapDBPersistentStore();
+		this.authenticator = new IdentityAuthenticator();
+		this.messagesStore = storge;
 		this.messagesStore.initStore();//初始化存储
-		this.sessionStore = sessionStore;
+		this.sessionStore = storge;
 		this.subscribeStore = new SubscribeStore();
+	}
+	
+	//将此类单例
+	private static ProtocolProcess INSTANCE;
+	public static ProtocolProcess getInstance(){
+		if (INSTANCE == null) {
+			INSTANCE = new ProtocolProcess();
+		}
+		return INSTANCE;
 	}
 	
     /**
@@ -110,12 +116,13 @@ public class ProtocolProcess {
 	public void processConnect(Channel client, ConnectMessage connectMessage){
 		Log.info("处理Connect的数据");
 		//首先查看保留位是否为0，不为0则断开连接,协议P24
-		if (!connectMessage.isReservedIsZero()) {
+		if (!connectMessage.getVariableHeader().isReservedIsZero()) {
 			client.close();
 			return;
 		}
 		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0，协议P24,P32
-		if (!connectMessage.getProtocolName().equals("MQTT") || connectMessage.getProtocolVersionNumber() != 4 ) {
+		if (!connectMessage.getVariableHeader().getProtocolName().equals("MQTT") || 
+				connectMessage.getVariableHeader().getProtocolVersionNumber() != 4 ) {
 			client.writeAndFlush(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
 			client.close();//版本或协议名不匹配，则断开该客户端连接
 			return;
@@ -375,9 +382,9 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-21
    	 */
-	public void processPubAck(Channel client, PubAckMessage pubAckMessage){		
+	public void processPubAck(Channel client, Message pubAckMessage){		
 		 String clientID = NettyAttrManager.getAttrClientId(client);
-		 int packgeID = pubAckMessage.getPackgeID();
+		 int packgeID = pubAckMessage.getPackageID();
 		 String publishKey = String.format("%s%d", clientID, packgeID);
 		 //取消Publish重传任务
 		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");

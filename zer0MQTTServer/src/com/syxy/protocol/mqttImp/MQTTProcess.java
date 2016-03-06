@@ -1,16 +1,12 @@
 package com.syxy.protocol.mqttImp;
 
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerAdapter;
+import io.netty.channel.ChannelHandlerContext;
 
-import com.syxy.protocol.IProcessHandler;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
-import com.syxy.protocol.mqttImp.message.DisconnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
-import com.syxy.protocol.mqttImp.message.PingReqMessage;
-import com.syxy.protocol.mqttImp.message.PubAckMessage;
-import com.syxy.protocol.mqttImp.message.PubRecMessage;
-import com.syxy.protocol.mqttImp.message.PubRelMessage;
-import com.syxy.protocol.mqttImp.message.PubcompMessage;
+import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
@@ -28,61 +24,51 @@ import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
  * @version 1.0
  * @date 2015-2-16
  */
-public class MQTTProcess implements IProcessHandler {
+public class MQTTProcess extends ChannelHandlerAdapter {
 
-	MapDBPersistentStore storage = new MapDBPersistentStore();
-	IMessagesStore messagesStore = storage;
-	ISessionStore sessionStore = storage;
-	IAuthenticator authenticator = new IdentityAuthenticator();
-	ProtocolProcess protocolProcess = new ProtocolProcess(authenticator, messagesStore, sessionStore);
-	
 	@Override
-	public void process(Message msg, Channel client) {
+	public void channelRead(ChannelHandlerContext ctx, Object msg)
+			throws Exception {
+		ProtocolProcess process = ProtocolProcess.getInstance();
+		Message message = (Message)msg;
 		
-		switch (msg.getType()) {
+		switch (message.getFixedHeader().getMessageType()) {
 		case CONNECT:
-			ConnectMessage connectMessage = (ConnectMessage)msg;
-			protocolProcess.processConnect(client, connectMessage);
+			process.processConnect(ctx.channel(), (ConnectMessage)message);
 			break;
 		case CONNACK:
 			break;
 		case PUBLISH:
-			PublishMessage publishMessage = (PublishMessage)msg;
-			protocolProcess.processPublic(client, publishMessage);
+			process.processPublic(ctx.channel(), (PublishMessage)message);
 			break;
 		case PUBACK:
-			PubAckMessage pubAckMessage = (PubAckMessage)msg;
-			protocolProcess.processPubAck(client, pubAckMessage);
-			break;
-		case PUBREC:
-			PubRecMessage pubRecMessage = (PubRecMessage)msg;
-			protocolProcess.processPubRec(client, pubRecMessage);
+			process.processPubAck(ctx.channel(), message);
 			break;
 		case PUBREL:
-			PubRelMessage pubRelMessage = (PubRelMessage)msg;
-			protocolProcess.processPubRel(client, pubRelMessage);
+			process.processPubRel(ctx.channel(), message);
+			break;
+		case PUBREC:
+			process.processPubRec(ctx.channel(), message);
 			break;
 		case PUBCOMP:
-			PubcompMessage pubcompMessage = (PubcompMessage)msg;
-			protocolProcess.processPubComp(client, pubcompMessage);
+			process.processPubComp(ctx.channel(), message);
 			break;
 		case SUBSCRIBE:
-			SubscribeMessage subscribeMessage = (SubscribeMessage)msg;
-			protocolProcess.processSubscribe(client, subscribeMessage);
+			process.processSubscribe(ctx.channel(), (SubscribeMessage)message);
+			break;
+		case SUBACK:
 			break;
 		case UNSUBSCRIBE:
-			UnSubscribeMessage unSubscribeMessage = (UnSubscribeMessage)msg;
-			protocolProcess.processUnSubscribe(client, unSubscribeMessage);
+			process.processUnSubscribe(ctx.channel(), (UnSubscribeMessage)message);
 			break;
 		case UNSUBACK:
 			break;
 		case DISCONNECT:
-			DisconnectMessage disconnectMessage = (DisconnectMessage)msg;
-			protocolProcess.processDisconnet(client, disconnectMessage);
+			process.processDisconnet(ctx.channel(), message);
 			break;
+
 		default:
-			client.close();
-			throw new UnsupportedOperationException("不支持" + msg.getType()+ "消息类型");
+			break;
 		}
 	}
 

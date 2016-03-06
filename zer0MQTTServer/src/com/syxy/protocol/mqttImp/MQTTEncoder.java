@@ -22,12 +22,12 @@ import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
 import com.syxy.protocol.mqttImp.message.SubAckMessage;
+import com.syxy.protocol.mqttImp.message.SubAckPayload;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
-import com.syxy.protocol.mqttImp.message.SubAckMessage.SubAckPayload;
 import com.syxy.protocol.mqttImp.message.SubscribePayload;
-import com.syxy.protocol.mqttImp.message.SubscribePayload.TopicSubscribe;
+import com.syxy.protocol.mqttImp.message.TopicSubscribe;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
-import com.syxy.protocol.mqttImp.message.UnSubscribeMessage.UnSubscribePayload;
+import com.syxy.protocol.mqttImp.message.UnSubscribePayload;
 
 /**
  *  MQTT协议编码

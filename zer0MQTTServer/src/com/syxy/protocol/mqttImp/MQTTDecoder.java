@@ -4,11 +4,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
-import io.netty.handler.codec.mqtt.MqttQoS;
-import io.netty.handler.codec.mqtt.MqttSubAckPayload;
-import io.netty.handler.codec.mqtt.MqttSubscribePayload;
-import io.netty.handler.codec.mqtt.MqttTopicSubscription;
-import io.netty.handler.codec.mqtt.MqttUnsubscribePayload;
 import io.netty.util.CharsetUtil;
 
 import java.util.ArrayList;
@@ -16,14 +11,13 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.sun.corba.se.spi.orbutil.fsm.Guard.Result;
 import com.syxy.protocol.mqttImp.MQTTDecoder.DecoderState;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
 import com.syxy.protocol.mqttImp.message.ConnAckVariableHeader;
-import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.ConnectPayload;
 import com.syxy.protocol.mqttImp.message.ConnectVariableHeader;
 import com.syxy.protocol.mqttImp.message.FixedHeader;
+import com.syxy.protocol.mqttImp.message.Message;
 import com.syxy.protocol.mqttImp.message.MessageType;
 import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
@@ -52,19 +46,49 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 		BAD_MESSAGE,
 	}
 	
+	private FixedHeader fixedHeader;
+	private Object variableHeader;
+	private Object payload;
+	
+	public MQTTDecoder(){
+		super(DecoderState.FIXED_HEADER);
+	}
+	
 	@Override
 	protected void decode(ChannelHandlerContext ctx, ByteBuf in,
 			List<Object> out) throws Exception {
+		
+		int bytesRemainingInVariablePart = 0;
+		
 		switch (state()) {
 		case FIXED_HEADER:
+			fixedHeader = decodeFixedHeader(in);
+			bytesRemainingInVariablePart = fixedHeader.getMessageLength();
+			checkpoint(DecoderState.VARIABLE_HEADER);
 			
 		case VARIABLE_HEADER:
+			final Result<?> variableHeaderResult = decodeVariableHeader(in, fixedHeader);
+			variableHeader = variableHeaderResult.getValue();
+			bytesRemainingInVariablePart -= variableHeaderResult.getUseNumOfBytes();
+			checkpoint(DecoderState.PAYLOAD);
 			
 		case PAYLOAD:
-			
+			final Result<?> payloadResult = decodePayload(in, fixedHeader.getMessageType(),
+					bytesRemainingInVariablePart, variableHeader);
+			payload = payloadResult.getValue();
+			bytesRemainingInVariablePart -= payloadResult.getUseNumOfBytes();
+			if (bytesRemainingInVariablePart != 0) {
+				throw new DecoderException("解码的字节数和剩余字节字段长度不匹配，最终剩余:" + bytesRemainingInVariablePart);
+			}
+			checkpoint(DecoderState.FIXED_HEADER);
+			Message message = MQTTMesageFactory.newMessage(fixedHeader, variableHeader, payload);
+			fixedHeader = null;
+			variableHeader = null;
+			payload = null;
+			out.add(message);
 			break;
 		case BAD_MESSAGE:
-			
+			in.skipBytes(actualReadableBytes());
 			break;
 		default:
 			throw new Error();
