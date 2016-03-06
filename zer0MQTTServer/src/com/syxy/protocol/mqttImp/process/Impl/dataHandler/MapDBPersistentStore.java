@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process.Impl.dataHandler;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -215,8 +217,8 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 	}
 
 	@Override
-	public void storeRetained(String topic, byte[] message, QoS qos) {
-		if (message.length <= 0) {
+	public void storeRetained(String topic, ByteBuf message, QoS qos) {
+		if (message.array().length <= 0) {
 			retainedStore.remove(topic);
 		} else {
 			StoredMessage storedMessage = new StoredMessage(message, qos, topic);

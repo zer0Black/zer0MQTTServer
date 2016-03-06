@@ -1,7 +1,13 @@
 package com.syxy.protocol.mqttImp.process;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.util.CharsetUtil;
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -10,16 +16,23 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
+import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.syxy.protocol.mqttImp.MQTTMesageFactory;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
+import com.syxy.protocol.mqttImp.message.ConnAckVariableHeader;
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
+import com.syxy.protocol.mqttImp.message.FixedHeader;
 import com.syxy.protocol.mqttImp.message.Message;
+import com.syxy.protocol.mqttImp.message.PackageIDManager;
 import com.syxy.protocol.mqttImp.message.PackageIdVariableHeader;
 import com.syxy.protocol.mqttImp.message.PublishMessage;
+import com.syxy.protocol.mqttImp.message.PublishVariableHeader;
 import com.syxy.protocol.mqttImp.message.QoS;
 import com.syxy.protocol.mqttImp.message.SubAckMessage;
+import com.syxy.protocol.mqttImp.message.SubAckPayload;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
+import com.syxy.protocol.mqttImp.message.TopicSubscribe;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.Impl.IdentityAuthenticator;
 import com.syxy.protocol.mqttImp.process.Impl.dataHandler.MapDBPersistentStore;
@@ -48,11 +61,11 @@ public class ProtocolProcess {
 	//遗嘱信息类
 	static final class WillMessage {
         private final String topic;
-        private final byte[] payload;
+        private final ByteBuf payload;
         private final boolean retained;
         private final QoS qos;
 
-        public WillMessage(String topic, byte[] payload, boolean retained, QoS qos) {
+        public WillMessage(String topic, ByteBuf payload, boolean retained, QoS qos) {
             this.topic = topic;
             this.payload = payload;
             this.retained = retained;
@@ -63,7 +76,7 @@ public class ProtocolProcess {
             return topic;
         }
 
-        public byte[] getPayload() {
+        public ByteBuf getPayload() {
             return payload;
         }
 
@@ -123,26 +136,32 @@ public class ProtocolProcess {
 		//处理protocol name和protocol version, 如果返回码!=0，sessionPresent必为0，协议P24,P32
 		if (!connectMessage.getVariableHeader().getProtocolName().equals("MQTT") || 
 				connectMessage.getVariableHeader().getProtocolVersionNumber() != 4 ) {
-			client.writeAndFlush(new ConnAckMessage(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, 0));
+			
+			ConnAckMessage connAckMessage = (ConnAckMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getConnAckFixedHeader(), 
+					new ConnAckVariableHeader(ConnectionStatus.UNACCEPTABLE_PROTOCOL_VERSION, false), 
+					null);
+			
+			client.writeAndFlush(connAckMessage);
 			client.close();//版本或协议名不匹配，则断开该客户端连接
 			return;
 		}
 		
 		//处理Connect包的保留位不为0的情况，协议P24
-		if (!connectMessage.isReservedIsZero()) {
+		if (!connectMessage.getVariableHeader().isReservedIsZero()) {
 			client.close();
 		}
 		
 		//处理clientID为null或长度为0的情况，协议P29
-		if (connectMessage.getClientId() == null || connectMessage.getClientId().length() == 0) {
+		if (connectMessage.getPayload().getClientId() == null || connectMessage.getPayload().getClientId().length() == 0) {
 			//clientID为null的时候，cleanSession只能为1,此时给client设置一个随机的，不存在的mac地址为ID，否则，断开连接
-			if (connectMessage.isCleanSession()) {
+			if (connectMessage.getVariableHeader().isCleanSession()) {
 				boolean isExist = true;
 				String macClientID = StringTool.generalMacString();
 				while (isExist) {
 					ConnectionDescriptor connectionDescriptor = clients.get(macClientID);
 					if (connectionDescriptor == null) {
-						connectMessage.setClientId(macClientID);
+						connectMessage.getPayload().setClientId(macClientID);
 						isExist = false;
 					} else {
 						macClientID = StringTool.generalMacString();
@@ -150,69 +169,82 @@ public class ProtocolProcess {
 				}
 			} else {
 				Log.info("客户端ID为空，cleanSession为0，根据协议，不接收此客户端");
-				client.writeAndFlush(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+				ConnAckMessage connAckMessage = (ConnAckMessage) MQTTMesageFactory.newMessage(
+						FixedHeader.getConnAckFixedHeader(), 
+						new ConnAckVariableHeader(ConnectionStatus.IDENTIFIER_REJECTED, false), 
+						null);
+				client.writeAndFlush(connAckMessage);
 				client.close();
 				return;
 			}
 		}
 		
 		//检查clientID的格式符合与否
-		if (!StringTool.isMacString(connectMessage.getClientId())) {
-			Log.info("客户端ID为{"+connectMessage.getClientId()+"}，拒绝此客户端");
-			client.writeAndFlush(new ConnAckMessage(ConnectionStatus.IDENTIFIER_REJECTED, 0));
+		if (!StringTool.isMacString(connectMessage.getPayload().getClientId())) {
+			Log.info("客户端ID为{"+connectMessage.getPayload().getClientId()+"}，拒绝此客户端");
+			ConnAckMessage connAckMessage = (ConnAckMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getConnAckFixedHeader(), 
+					new ConnAckVariableHeader(ConnectionStatus.IDENTIFIER_REJECTED, false), 
+					null);
+			client.writeAndFlush(connAckMessage);
 			client.close();
 			return;
 		}
 		
 		//如果会话中已经存储了这个新连接的ID，就关闭之前的clientID
-		if (clients.containsKey(connectMessage.getClientId())) {
-			Log.error("客户端ID{"+connectMessage.getClientId()+"}已存在，强制关闭老连接");
-			Channel oldChannel = clients.get(connectMessage.getClientId()).getClient();
+		if (clients.containsKey(connectMessage.getPayload().getClientId())) {
+			Log.error("客户端ID{"+connectMessage.getPayload().getClientId()+"}已存在，强制关闭老连接");
+			Channel oldChannel = clients.get(connectMessage.getPayload().getClientId()).getClient();
 			boolean cleanSession = NettyAttrManager.getAttrCleanSession(oldChannel);
 			if (cleanSession) {
-				cleanSession(connectMessage.getClientId());
+				cleanSession(connectMessage.getPayload().getClientId());
 			}
 			oldChannel.close();
 		}
 		
 		//若至此没问题，则将新客户端连接加入client的维护列表中
 		ConnectionDescriptor connectionDescriptor = 
-				new ConnectionDescriptor(connectMessage.getClientId(), client, connectMessage.isCleanSession());
-		this.clients.put(connectMessage.getClientId(), connectionDescriptor);
+				new ConnectionDescriptor(connectMessage.getPayload().getClientId(), 
+						client, connectMessage.getVariableHeader().isCleanSession());
+		this.clients.put(connectMessage.getPayload().getClientId(), connectionDescriptor);
 		//处理心跳包时间，把心跳包时长和一些其他属性都添加到会话中，方便以后使用
-		int keepAlive = connectMessage.getKeepAlive();
+		int keepAlive = connectMessage.getVariableHeader().getKeepAlive();
 		Log.debug("连接的心跳包时长是 {" + keepAlive + "} s");
-		NettyAttrManager.setAttrClientId(client, connectMessage.getClientId());
-		NettyAttrManager.setAttrCleanSession(client, connectMessage.isCleanSession());
+		NettyAttrManager.setAttrClientId(client, connectMessage.getPayload().getClientId());
+		NettyAttrManager.setAttrCleanSession(client, connectMessage.getVariableHeader().isCleanSession());
 		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接(但这里要注意把单位是s转为ms)
 		NettyAttrManager.setAttrKeepAlive(client, keepAlive *1000);
 		
 		//处理Will flag（遗嘱信息）,协议P26
-		if (connectMessage.isHasWill()) {
-			QoS willQos = connectMessage.getWillQoS();
-			byte[] willPayload = connectMessage.getWillMessage().getBytes();//获取遗嘱信息的具体内容
-			WillMessage will = new WillMessage(connectMessage.getWillTopic(),
-					willPayload, connectMessage.isWillRetain(),willQos);
+		if (connectMessage.getVariableHeader().isHasWill()) {
+			QoS willQos = connectMessage.getVariableHeader().getWillQoS();
+			ByteBuf willPayload = Unpooled.buffer().writeBytes(connectMessage.getPayload().getWillMessage().getBytes());//获取遗嘱信息的具体内容
+			WillMessage will = new WillMessage(connectMessage.getPayload().getWillTopic(),
+					willPayload, connectMessage.getVariableHeader().isWillRetain(),willQos);
 			//把遗嘱信息与和其对应的的clientID存储在一起
-			willStore.put(connectMessage.getClientId(), will);
+			willStore.put(connectMessage.getPayload().getClientId(), will);
 		}
 		
 		//处理身份验证（userNameFlag和passwordFlag）
-		if (connectMessage.isHasUsername() && connectMessage.isHasPassword()) {
-			String userName = connectMessage.getUsername();
-			String pwd = connectMessage.getPassword();
+		if (connectMessage.getVariableHeader().isHasUsername() && 
+				connectMessage.getVariableHeader().isHasPassword()) {
+			String userName = connectMessage.getPayload().getUsername();
+			String pwd = connectMessage.getPayload().getPassword();
 			//此处对用户名和密码做验证
 			if (!authenticator.checkValid(userName, pwd)) {
-				ConnAckMessage badAckMessage = new ConnAckMessage(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, 0);
-				client.writeAndFlush(badAckMessage);
+				ConnAckMessage connAckMessage = (ConnAckMessage) MQTTMesageFactory.newMessage(
+						FixedHeader.getConnAckFixedHeader(), 
+						new ConnAckVariableHeader(ConnectionStatus.BAD_USERNAME_OR_PASSWORD, false), 
+						null);
+				client.writeAndFlush(connAckMessage);
 				return;
 			}
 		}
 		
 		//处理cleanSession为1的情况
-        if (connectMessage.isCleanSession()) {
+        if (connectMessage.getVariableHeader().isCleanSession()) {
             //移除所有之前的session并开启一个新的，并且原先保存的subscribe之类的都得从服务器删掉
-            cleanSession(connectMessage.getClientId());
+            cleanSession(connectMessage.getPayload().getClientId());
         }
         
         //TODO 此处生成一个token(以后每次客户端每次请求服务器，都必须先验证此token正确与否)，并把token保存到本地以及传回给客户端
@@ -229,23 +261,30 @@ public class ProtocolProcess {
 //		}
         
         //处理回写的CONNACK,并回写，协议P29
-        ConnAckMessage okResp = new ConnAckMessage();
-        okResp.setStatus(ConnAckMessage.ConnectionStatus.ACCEPTED);
+        ConnAckMessage okResp = null;
         //协议32,session present的处理
-        if (!connectMessage.isCleanSession() && sessionStore.searchSubscriptions(connectMessage.getClientId())) {
-        	okResp.setSessionPresent(1);
+        if (!connectMessage.getVariableHeader().isCleanSession() && 
+        		sessionStore.searchSubscriptions(connectMessage.getPayload().getClientId())) {
+        	okResp = (ConnAckMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getConnAckFixedHeader(), 
+					new ConnAckVariableHeader(ConnectionStatus.ACCEPTED, true), 
+					null);
 		}else{
-			okResp.setSessionPresent(0);
+			okResp = (ConnAckMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getConnAckFixedHeader(), 
+					new ConnAckVariableHeader(ConnectionStatus.ACCEPTED, false), 
+					null);
 		}
 //        okResp.setPayload(jsonObject.toString());
         client.writeAndFlush(okResp);
         Log.info("CONNACK处理完毕并成功发送");
-        Log.info("连接的客户端clientID="+connectMessage.getClientId()+", cleanSession为"+connectMessage.isCleanSession());
+        Log.info("连接的客户端clientID="+connectMessage.getPayload().getClientId()+", " +
+        		"cleanSession为"+connectMessage.getVariableHeader().isCleanSession());
         
         //如果cleanSession=0,需要在重连的时候重发同一clientID存储在服务端的离线信息
-        if (!connectMessage.isCleanSession()) {
+        if (!connectMessage.getVariableHeader().isCleanSession()) {
             //force the republish of stored QoS1 and QoS2
-        	republishMessage(connectMessage.getClientId());
+        	republishMessage(connectMessage.getPayload().getClientId());
         }
 	}
 	
@@ -260,11 +299,11 @@ public class ProtocolProcess {
 	public void processPublic(Channel client, PublishMessage publishMessage){
 		Log.info("处理publish的数据");
 		String clientID = NettyAttrManager.getAttrClientId(client);
-		final String topic = publishMessage.getTopic();
-	    final QoS qos = publishMessage.getQos();
-	    final byte[] message = publishMessage.getData();
-	    final int packgeID = publishMessage.getPackgeID();
-	    final boolean retain = publishMessage.isRetain();
+		final String topic = publishMessage.getVariableHeader().getTopic();
+	    final QoS qos = publishMessage.getFixedHeader().getQos();
+	    final ByteBuf message = publishMessage.getPayload();
+	    final int packgeID = publishMessage.getVariableHeader().getPackageID();
+	    final boolean retain = publishMessage.getFixedHeader().isRetain();
 	    
 	    processPublic(clientID, topic, qos, retain, message, packgeID);
 	}
@@ -282,7 +321,7 @@ public class ProtocolProcess {
 		String clientID = NettyAttrManager.getAttrClientId(client);
 		final String topic = willMessage.getTopic();
 	    final QoS qos = willMessage.getQos();
-	    final byte[] message = willMessage.getPayload();
+	    final ByteBuf message = willMessage.getPayload();
 	    final boolean retain = willMessage.isRetained();
 	    
 	    processPublic(clientID, topic, qos, retain, message, null);
@@ -300,10 +339,10 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-19
    	 */
-	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, byte[] message, Integer recPackgeID){
+	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, ByteBuf message, Integer recPackgeID){
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+recPackgeID+"}");
 		String publishKey = null;
-		int sendPackageID = Message.getNextMessageId();
+		int sendPackageID = PackageIDManager.getNextMessageId();
 		
 		//根据协议P34，Qos=3的时候，就关闭连接
 		if (qos == QoS.RESERVE) {
@@ -382,18 +421,18 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-21
    	 */
-	public void processPubAck(Channel client, Message pubAckMessage){		
+	public void processPubAck(Channel client, PackageIdVariableHeader pubAckVariableMessage){		
 		 String clientID = NettyAttrManager.getAttrClientId(client);
-		 int packgeID = pubAckMessage.getPackageID();
-		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 int pacakgeID = pubAckVariableMessage.getPackageID();
+		 String publishKey = String.format("%s%d", clientID, pacakgeID);
 		 //取消Publish重传任务
 		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 //删除临时存储用于重发的Publish消息
 		 messagesStore.removeQosPublishMessage(publishKey);
 		 //删除离线消息
-		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
+		 messagesStore.removeMessageInSessionForPublish(clientID, pacakgeID);
 		 //最后把使用完的包ID释放掉
-		 Message.releaseMessageId(packgeID);
+		 PackageIDManager.releaseMessageId(pacakgeID);
 	}
 
 	/**
@@ -404,24 +443,24 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubRec(Channel client, PubRecMessage pubRecMessage){
+	public void processPubRec(Channel client, PackageIdVariableHeader pubRecVariableMessage){
 		 String clientID = NettyAttrManager.getAttrClientId(client);
-		 int packgeID = pubRecMessage.getPackgeID();
-		 String publishKey = String.format("%s%d", clientID, packgeID);
+		 int packageID = pubRecVariableMessage.getPackageID();
+		 String publishKey = String.format("%s%d", clientID, packageID);
 		 
 		 //取消Publish重传任务,同时删除对应的值
 		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 messagesStore.removeQosPublishMessage(publishKey);
 		 //删除离线消息
-		 messagesStore.removeMessageInSessionForPublish(clientID, packgeID);
+		 messagesStore.removeMessageInSessionForPublish(clientID, packageID);
 		 //此处须额外处理，根据不同的事件，处理不同的包ID
-		 messagesStore.storePubRecPackgeID(clientID, packgeID);
+		 messagesStore.storePubRecPackgeID(clientID, packageID);
 		 //组装PubRel事件后，存储PubRel事件，并发回PubRel
-		 PubRelEvent pubRelEvent = new PubRelEvent(clientID, packgeID);
+		 PubRelEvent pubRelEvent = new PubRelEvent(clientID, packageID);
 		 //此处的Key和Publish的key一致
 		 messagesStore.storePubRelMessage(publishKey, pubRelEvent);
 		 //发回PubRel
-		 sendPubRel(clientID, packgeID);
+		 sendPubRel(clientID, packageID);
 		 //开启PubRel重传事件
 		 Map<String, Object> jobParam = new HashMap<String, Object>();
 		 jobParam.put("ProtocolProcess", this);
@@ -437,13 +476,13 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubRel(Channel client, PubRelMessage pubRelMessage){
+	public void processPubRel(Channel client, PackageIdVariableHeader pubRelVariableMessage){
 		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 //删除的是接收端的包ID
-		 int packgeID = pubRelMessage.getPackgeID();
+		 int pacakgeID = pubRelVariableMessage.getPackageID();
 		 
 		 messagesStore.removePublicPackgeID(clientID);
-		 sendPubComp(clientID, packgeID);
+		 sendPubComp(clientID, pacakgeID);
 	}
 	
 	/**
@@ -454,10 +493,10 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-23
    	 */
-	public void processPubComp(Channel client, PubcompMessage pubcompMessage){
+	public void processPubComp(Channel client, PackageIdVariableHeader pubcompVariableMessage){
 		 String clientID = NettyAttrManager.getAttrClientId(client);
-		 int packageID = pubcompMessage.getPackgeID();
-		 String pubRelkey = String.format("%s%d", clientID, packageID);
+		 int packaageID = pubcompVariableMessage.getPackageID();
+		 String pubRelkey = String.format("%s%d", clientID, packaageID);
 		 
 		 //删除存储的PubRec包ID
 		 messagesStore.removePubRecPackgeID(clientID);
@@ -465,7 +504,7 @@ public class ProtocolProcess {
 		 QuartzManager.removeJob(pubRelkey, "pubRel", pubRelkey, "pubRel");
 		 messagesStore.removePubRelMessage(pubRelkey);
 		 //最后把使用完的包ID释放掉
-		 Message.releaseMessageId(packageID);
+		 PackageIDManager.releaseMessageId(packaageID);
 	}
 
 	/**
@@ -481,31 +520,28 @@ public class ProtocolProcess {
 		 boolean cleanSession = NettyAttrManager.getAttrCleanSession(client);
 		 Log.info("处理subscribe数据包，客户端ID={"+clientID+"},cleanSession={"+cleanSession+"}");
 		 //一条subscribeMessage信息可能包含多个Topic和Qos
-		 List<String> topicFilters = subscribeMessage.getTopicFilter();
-		 List<QoS> Qoss = subscribeMessage.getRequestQos();
-		 if (topicFilters.size() == Qoss.size()) {
-			//依次处理订阅
-			for (int i = 0; i < topicFilters.size(); i++) {
-				QoS qos = Qoss.get(i);
-				String topic = topicFilters.get(i);
-				Subscription newSubscription = new Subscription(clientID, topic, qos, cleanSession);
-				//订阅新的订阅
-				subscribeSingleTopic(newSubscription, topic);
-			}
-			SubAckMessage subAckMessage = new SubAckMessage(subscribeMessage.getPackgeID());
-			 for (int i = 0; i < Qoss.size(); i++) {
-				 QoS qos = Qoss.get(i);
-				 subAckMessage.addGrantedQoSs(qos);
-			 }
-			 Log.info("回写subAck消息给订阅者，包ID={"+subscribeMessage.getPackgeID()+"}");
-			 client.writeAndFlush(subAckMessage);
-		 }else{
-			try {
-				throw new Exception("订阅的主题和Qos数量不等，终端订阅");
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		 List<TopicSubscribe> topicSubscribes = subscribeMessage.getPayload().getTopicSubscribes();
+		
+		 List<Integer> grantedQosLevel = new ArrayList<Integer>();
+		 //依次处理订阅
+		 for (TopicSubscribe topicSubscribe : topicSubscribes) {
+			String topicFilter = topicSubscribe.getTopicFilter();
+			QoS qos = topicSubscribe.getQos();
+			Subscription newSubscription = new Subscription(clientID, topicFilter, qos, cleanSession);
+			//订阅新的订阅
+			subscribeSingleTopic(newSubscription, topicFilter);
+			
+			//生成suback荷载
+			grantedQosLevel.add(qos.value());
 		 }
+		 
+		 SubAckMessage subAckMessage = (SubAckMessage) MQTTMesageFactory.newMessage(
+				 FixedHeader.getSubAckFixedHeader(), 
+				 new PackageIdVariableHeader(subscribeMessage.getVariableHeader().getPackageID()), 
+				 new SubAckPayload(grantedQosLevel));
+		 
+		 Log.info("回写subAck消息给订阅者，包ID={"+subscribeMessage.getVariableHeader().getPackageID()+"}");
+		 client.writeAndFlush(subAckMessage);
 	}
 	
 
@@ -519,17 +555,20 @@ public class ProtocolProcess {
    	 */
 	public void processUnSubscribe(Channel client, UnSubscribeMessage unSubscribeMessage){
 		 String clientID = NettyAttrManager.getAttrClientId(client);
-		 int packgeID = unSubscribeMessage.getPackgeID();
+		 int packageID = unSubscribeMessage.getVariableHeader().getPackageID();
 		 Log.info("处理unSubscribe数据包，客户端ID={"+clientID+"}");
-		 List<String> topicFilters = unSubscribeMessage.getTopicFilter();
+		 List<String> topicFilters = unSubscribeMessage.getPayload().getTopics();
 		 for (String topic : topicFilters) {
 			//取消订阅树里的订阅
 			subscribeStore.removeSubscription(topic, clientID);
 			sessionStore.removeSubscription(topic, clientID);
 		 }
 		 
-		 UnSubAckMessage unSubAckMessage = new UnSubAckMessage(packgeID);
-		 Log.info("回写unSubAck信息给客户端，包ID为{"+packgeID+"}");
+		 Message unSubAckMessage = MQTTMesageFactory.newMessage(
+				 FixedHeader.getUnSubAckFixedHeader(), 
+				 new PackageIdVariableHeader(packageID), 
+				 null);
+		 Log.info("回写unSubAck信息给客户端，包ID为{"+packageID+"}");
 		 client.writeAndFlush(unSubAckMessage);
 	}
 	
@@ -557,7 +596,7 @@ public class ProtocolProcess {
    	 * @version 1.0
    	 * @date 2015-5-24
    	 */
-	public void processDisconnet(Channel client, DisconnectMessage disconnectMessage){
+	public void processDisconnet(Channel client, Message disconnectMessage){
 		 String clientID = NettyAttrManager.getAttrClientId(client);
 		 boolean cleanSession = NettyAttrManager.getAttrCleanSession(client);
 		 if (cleanSession) {
@@ -660,7 +699,7 @@ public class ProtocolProcess {
 	  * @version 1.0
       * @date 2015-05-19
 	  */
-	private void sendPublishMessage(String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
+	private void sendPublishMessage(String topic, QoS qos, ByteBuf message, boolean retain, Integer packageID, boolean dup){
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
 			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {
@@ -670,19 +709,15 @@ public class ProtocolProcess {
 			
 			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
 			
-			PublishMessage publishMessage = new PublishMessage();
-			publishMessage.setRetain(retain);
-			publishMessage.setTopic(topic);
-			publishMessage.setQos(qos);
-			publishMessage.setData(message);
-			publishMessage.setDup(dup);
-			
-//			if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
-//				publishMessage.setPackgeID(packgeID);
-//			}
+			PublishMessage publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+					new PublishVariableHeader(topic, packageID), 
+					message);
 			
 			if (!sub.isCleanSession()) {
-				 PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, retain, sub.getClientID(), packgeID != null ? packgeID : 0);
+				 PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, 
+						 retain, sub.getClientID(), 
+						 packageID != null ? packageID : 0);
                  messagesStore.storeMessageToSessionForPublish(newPublishEvt);
 			}
 			
@@ -716,18 +751,20 @@ public class ProtocolProcess {
 	  * @version 1.0
       * @date 2015-05-19
 	  */
-	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain, Integer packgeID, boolean dup){
+	private void sendPublishMessage(String clientID, String topic, QoS qos, ByteBuf message, boolean retain, Integer packageID, boolean dup){
 		Log.info("发送pulicMessage给指定客户端");
 	
-		PublishMessage publishMessage = new PublishMessage();
-		publishMessage.setRetain(retain);
-		publishMessage.setTopic(topic);
-		publishMessage.setQos(qos);
-		publishMessage.setData(message);
-		publishMessage.setDup(dup);
-		
-		if (publishMessage.getQos() != QoS.AT_MOST_ONCE) {
-			publishMessage.setPackgeID(packgeID);
+		PublishMessage publishMessage = null;
+		if (qos != QoS.AT_MOST_ONCE) {
+			publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+					new PublishVariableHeader(topic, packageID), 
+					message);
+		}else {
+			publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+					new PublishVariableHeader(topic), 
+					message);
 		}
 		
 		if (this.clients == null) {
@@ -757,8 +794,8 @@ public class ProtocolProcess {
 	  * @version 1.0
       * @date 2015-12-1
 	  */
-	private void sendPublishMessage(String clientID, String topic, QoS qos, byte[] message, boolean retain){
-		int packageID = Message.getNextMessageId();
+	private void sendPublishMessage(String clientID, String topic, QoS qos, ByteBuf message, boolean retain){
+		int packageID = PackageIDManager.getNextMessageId();
 		sendPublishMessage(clientID, topic, qos, message, retain, packageID, false);
 	}
 	
@@ -770,11 +807,13 @@ public class ProtocolProcess {
 	 * @version 1.0
 	 * @date 2015-5-21
 	 */
-	private void sendPubAck(String clientID, Integer packgeID) {
+	private void sendPubAck(String clientID, Integer packageID) {
 	        Log.info("发送PubAck消息给客户端");
 
-	        PubAckMessage pubAckMessage = new PubAckMessage();
-	        pubAckMessage.setPackgeID(packgeID);
+	        Message pubAckMessage = MQTTMesageFactory.newMessage(
+	        		FixedHeader.getPubAckFixedHeader(), 
+	        		new PackageIdVariableHeader(packageID), 
+	        		null);
 	        
 	        try {
 	        	if (this.clients == null) {
@@ -803,11 +842,13 @@ public class ProtocolProcess {
 	 * @version 1.0
 	 * @date 2015-5-21
 	 */
-	private void sendPubRec(String clientID, Integer packgeID) {
+	private void sendPubRec(String clientID, Integer packageID) {
 	        Log.trace("发送PubRec消息给客户端");
 
-	        PubRecMessage pubRecMessage = new PubRecMessage();
-	        pubRecMessage.setPackgeID(packgeID);
+	        Message pubRecMessage = MQTTMesageFactory.newMessage(
+	        		FixedHeader.getPubAckFixedHeader(), 
+	        		new PackageIdVariableHeader(packageID), 
+	        		null);
 	        
 	        try {
 	        	if (this.clients == null) {
@@ -836,11 +877,13 @@ public class ProtocolProcess {
 	 * @version 1.0
 	 * @date 2015-5-23
 	 */
-	private void sendPubRel(String clientID, Integer packgeID) {
+	private void sendPubRel(String clientID, Integer packageID) {
 	        Log.trace("发送PubRel消息给客户端");
 
-	        PubRelMessage pubRelMessage = new PubRelMessage();
-	        pubRelMessage.setPackgeID(packgeID);
+	        Message pubRelMessage = MQTTMesageFactory.newMessage(
+	        		FixedHeader.getPubAckFixedHeader(), 
+	        		new PackageIdVariableHeader(packageID), 
+	        		null);
 	        
 	        try {
 	        	if (this.clients == null) {
@@ -869,11 +912,13 @@ public class ProtocolProcess {
 	 * @version 1.0
 	 * @date 2015-5-23
 	 */
-	private void sendPubComp(String clientID, Integer packgeID) {
+	private void sendPubComp(String clientID, Integer packageID) {
 	        Log.trace("发送PubComp消息给客户端");
 
-	        PubcompMessage pubcompMessage = new PubcompMessage();
-	        pubcompMessage.setPackgeID(packgeID);
+	        Message pubcompMessage = MQTTMesageFactory.newMessage(
+	        		FixedHeader.getPubAckFixedHeader(), 
+	        		new PackageIdVariableHeader(packageID), 
+	        		null);
 	        
 	        try {
 	        	if (this.clients == null) {

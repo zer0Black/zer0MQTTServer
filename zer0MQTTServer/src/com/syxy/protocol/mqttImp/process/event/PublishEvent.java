@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process.event;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.Serializable;
 
 import com.syxy.protocol.mqttImp.message.QoS;
@@ -14,13 +16,13 @@ import com.syxy.protocol.mqttImp.message.QoS;
 public class PublishEvent implements Serializable{
 	String topic;
 	QoS qos;
-	byte[] message;
+	ByteBuf message;
 	boolean retain;
 	String clientID;
 	//针对Qos1和Qos2
 	int packgeID;
 	
-	public PublishEvent(String topic, QoS qos, byte[] message, boolean retain, String clientID, Integer pkgID){
+	public PublishEvent(String topic, QoS qos, ByteBuf message, boolean retain, String clientID, Integer pkgID){
 		this.topic = topic;
 		this.qos = qos;
 		this.message = message;
@@ -47,11 +49,11 @@ public class PublishEvent implements Serializable{
 		this.qos = qos;
 	}
 
-	public byte[] getMessage() {
+	public ByteBuf getMessage() {
 		return message;
 	}
 
-	public void setMessage(byte[] message) {
+	public void setMessage(ByteBuf message) {
 		this.message = message;
 	}
 

@@ -11,8 +11,11 @@ public class PublishVariableHeader{
 	private String topic;
 	private int packageID;
 	
+	public PublishVariableHeader(String topic) {
+		this.topic = topic;
+	}
+	
 	public PublishVariableHeader(String topic, int packageID) {
-		super();
 		this.topic = topic;
 		this.packageID = packageID;
 	}

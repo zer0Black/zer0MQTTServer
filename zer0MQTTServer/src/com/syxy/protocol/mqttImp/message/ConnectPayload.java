@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.message;
 
+import io.netty.buffer.ByteBuf;
+
 /**
  * MQTT协议Connect消息类型的荷载
  * 

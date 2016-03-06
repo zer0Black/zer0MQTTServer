@@ -17,6 +17,16 @@ public class FixedHeader {
 	private int messageLength; //第二个字节
 	
 	public FixedHeader(MessageType messageType,
+			   boolean dup,
+			   QoS qos,
+			   boolean retain){
+		this.messageType = messageType;
+		this.dup = dup;
+		this.qos = qos;
+		this.retain = retain;
+	}
+	
+	public FixedHeader(MessageType messageType,
 					   boolean dup,
 					   QoS qos,
 					   boolean retain,
@@ -78,4 +88,54 @@ public class FixedHeader {
 		return stringBuilder.toString();
 	}
 	
+	public static FixedHeader getConnectFixedHeader(){
+		return new FixedHeader(MessageType.CONNECT, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getConnAckFixedHeader(){
+		return new FixedHeader(MessageType.CONNACK, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getPublishFixedHeader(
+			   boolean dup,
+			   QoS qos,
+			   boolean retain){
+		return new FixedHeader(MessageType.PUBLISH, dup, qos, retain);
+	}
+	
+	public static FixedHeader getPubAckFixedHeader(){
+		return new FixedHeader(MessageType.PUBACK, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getPubRecFixedHeader(){
+		return new FixedHeader(MessageType.PUBREC, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getPubRelFixedHeader(){
+		return new FixedHeader(MessageType.PUBREL, false, QoS.AT_LEAST_ONCE, false);
+	}
+	
+	public static FixedHeader getPubCompFixedHeader(){
+		return new FixedHeader(MessageType.PUBCOMP, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getSubscribeFixedHeader(){
+		return new FixedHeader(MessageType.SUBSCRIBE, false, QoS.AT_LEAST_ONCE, false);
+	}
+	
+	public static FixedHeader getSubAckFixedHeader(){
+		return new FixedHeader(MessageType.SUBACK, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getUnSubscribeFixedHeader(){
+		return new FixedHeader(MessageType.UNSUBSCRIBE, false, QoS.AT_LEAST_ONCE, false);
+	}
+	
+	public static FixedHeader getUnSubAckFixedHeader(){
+		return new FixedHeader(MessageType.UNSUBACK, false, QoS.AT_MOST_ONCE, false);
+	}
+	
+	public static FixedHeader getDisconnectFixedHeader(){
+		return new FixedHeader(MessageType.DISCONNECT, false, QoS.AT_MOST_ONCE, false);
+	}
 }

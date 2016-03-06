@@ -42,16 +42,16 @@ public class MQTTProcess extends ChannelHandlerAdapter {
 			process.processPublic(ctx.channel(), (PublishMessage)message);
 			break;
 		case PUBACK:
-			process.processPubAck(ctx.channel(), message);
+			process.processPubAck(ctx.channel(), (PackageIdVariableHeader)message.getVariableHeader());
 			break;
 		case PUBREL:
-			process.processPubRel(ctx.channel(), message);
+			process.processPubRel(ctx.channel(), (PackageIdVariableHeader)message.getVariableHeader());
 			break;
 		case PUBREC:
-			process.processPubRec(ctx.channel(), message);
+			process.processPubRec(ctx.channel(), (PackageIdVariableHeader)message.getVariableHeader());
 			break;
 		case PUBCOMP:
-			process.processPubComp(ctx.channel(), message);
+			process.processPubComp(ctx.channel(), (PackageIdVariableHeader)message.getVariableHeader());
 			break;
 		case SUBSCRIBE:
 			process.processSubscribe(ctx.channel(), (SubscribeMessage)message);

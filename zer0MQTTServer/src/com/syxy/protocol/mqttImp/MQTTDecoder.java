@@ -1,6 +1,7 @@
 package com.syxy.protocol.mqttImp;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -419,6 +420,7 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 	    		willMessageResult != null?willMessageResult.getValue():null, 
 	    		userNameResult != null?userNameResult.getValue():null, 
 	    		passwordResult != null?passwordResult.getValue():null);
+	    
 	    return new Result<ConnectPayload>(connectPayload, useNumOfBytes);
 	}
 	

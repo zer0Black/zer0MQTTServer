@@ -1,5 +1,7 @@
 package com.syxy.protocol.mqttImp.process.Interface;
 
+import io.netty.buffer.ByteBuf;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
@@ -20,10 +22,10 @@ public interface IMessagesStore {
 
 	public static class StoredMessage implements Serializable {
 		final QoS qos;
-        final byte[] payload;
+        final ByteBuf payload;
         final String topic;
 
-        public StoredMessage(byte[] message, QoS qos, String topic) {
+        public StoredMessage(ByteBuf message, QoS qos, String topic) {
             this.qos = qos;
             this.payload = message;
             this.topic = topic;
@@ -33,7 +35,7 @@ public interface IMessagesStore {
             return qos;
         }
 
-        public byte[] getPayload() {
+        public ByteBuf getPayload() {
 			return payload;
 		}
 
@@ -184,7 +186,7 @@ public interface IMessagesStore {
 	 * @version 1.0
 	 * @date 2015-05-26
 	 */
-    void storeRetained(String topic, byte[] message, QoS qos);
+    void storeRetained(String topic, ByteBuf message, QoS qos);
     
     /**
 	 * 删除指定topic的Retain信息
