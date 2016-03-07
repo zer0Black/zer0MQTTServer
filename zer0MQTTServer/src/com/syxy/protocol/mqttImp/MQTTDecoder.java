@@ -1,7 +1,6 @@
 package com.syxy.protocol.mqttImp;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.ReplayingDecoder;
@@ -159,6 +158,7 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 			if (fixedHeader.isRetain()) {
 				throw new DecoderException(fixedHeader.getMessageType().name()+"的Retain必须为0");
 			}
+			break;
 		case CONNECT:
 		case CONNACK:
 		case PUBACK:
@@ -180,9 +180,11 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 			if (fixedHeader.isRetain()) {
 				throw new DecoderException(fixedHeader.getMessageType().name()+"的Retain必须为0");
 			}
+			break;
 		default:
 			return fixedHeader;
 		}
+		return fixedHeader;
 	}
 
 	/**

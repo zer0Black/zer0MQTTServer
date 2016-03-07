@@ -16,13 +16,13 @@ import com.syxy.protocol.mqttImp.message.QoS;
 public class PublishEvent implements Serializable{
 	String topic;
 	QoS qos;
-	ByteBuf message;
+	byte[] message;
 	boolean retain;
 	String clientID;
 	//针对Qos1和Qos2
 	int packgeID;
 	
-	public PublishEvent(String topic, QoS qos, ByteBuf message, boolean retain, String clientID, Integer pkgID){
+	public PublishEvent(String topic, QoS qos, byte[] message, boolean retain, String clientID, Integer pkgID){
 		this.topic = topic;
 		this.qos = qos;
 		this.message = message;
@@ -49,11 +49,11 @@ public class PublishEvent implements Serializable{
 		this.qos = qos;
 	}
 
-	public ByteBuf getMessage() {
+	public byte[] getMessage() {
 		return message;
 	}
 
-	public void setMessage(ByteBuf message) {
+	public void setMessage(byte[] message) {
 		this.message = message;
 	}
 

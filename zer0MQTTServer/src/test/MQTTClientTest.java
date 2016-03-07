@@ -39,7 +39,7 @@ public class MQTTClientTest extends JFrame {
         try { 
             client = new MqttClient(host, clientMac, new MemoryPersistence());  
             connect();
-            client.subscribe(myTopic, 1);
+            client.subscribe(myTopic, 0);
         } catch (Exception e) { 
             e.printStackTrace(); 
         }
@@ -50,7 +50,7 @@ public class MQTTClientTest extends JFrame {
         button.addActionListener(new ActionListener() {  
 
             public void actionPerformed(ActionEvent ae) {  
-                try { 
+                try {
                     MqttDeliveryToken token = topic.publish(message);  
                     token.waitForCompletion();  
                     System.out.println(token.isComplete()+"========");  
@@ -93,7 +93,7 @@ public class MQTTClientTest extends JFrame {
             
             topic = client.getTopic(myTopic);  
             
-            message = new MqttMessage(); 
+            message = new MqttMessage();
             message.setQos(1);  
             message.setRetained(true);  
             System.out.println(message.isRetained()+"------ratained״̬");  

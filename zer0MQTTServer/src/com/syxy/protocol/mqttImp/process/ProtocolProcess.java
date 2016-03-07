@@ -1,12 +1,9 @@
 package com.syxy.protocol.mqttImp.process;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
-import io.netty.util.CharsetUtil;
 
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -16,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 
-import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.syxy.protocol.mqttImp.MQTTMesageFactory;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage;
 import com.syxy.protocol.mqttImp.message.ConnAckMessage.ConnectionStatus;
@@ -275,7 +271,7 @@ public class ProtocolProcess {
 					new ConnAckVariableHeader(ConnectionStatus.ACCEPTED, false), 
 					null);
 		}
-//        okResp.setPayload(jsonObject.toString());
+        
         client.writeAndFlush(okResp);
         Log.info("CONNACK处理完毕并成功发送");
         Log.info("连接的客户端clientID="+connectMessage.getPayload().getClientId()+", " +
@@ -363,7 +359,10 @@ public class ProtocolProcess {
 			boolean dup = false;
 			
 			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
-			PublishEvent storePubEvent = new PublishEvent(topic, qos, message, retain,
+			//将ByteBuf转变为byte[]
+			byte[] messageBytes = new byte[message.readableBytes()];
+			message.getBytes(message.readerIndex(), messageBytes);
+			PublishEvent storePubEvent = new PublishEvent(topic, qos, messageBytes, retain,
                     clientID, sendPackageID);
 		
 			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
@@ -388,7 +387,10 @@ public class ProtocolProcess {
 			boolean retain = false;
 			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
 			messagesStore.storePublicPackgeID(clientID, sendPackageID);
-			PublishEvent pubEvent = new PublishEvent(topic, qos, message, retain, clientID, sendPackageID);
+			//将ByteBuf转变为byte[]
+			byte[] messageBytes = new byte[message.readableBytes()];
+			message.getBytes(message.readerIndex(), messageBytes);
+			PublishEvent pubEvent = new PublishEvent(topic, qos, messageBytes, retain, clientID, sendPackageID);
 			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
 			
 			//存临时Publish消息，用于重发
@@ -645,7 +647,7 @@ public class ProtocolProcess {
 			sendPublishMessage(pubEvent.getClientID(), 
 							   pubEvent.getTopic(), 
 							   pubEvent.getQos(), 
-							   pubEvent.getMessage(), 
+							   Unpooled.buffer().writeBytes(pubEvent.getMessage()), 
 							   pubEvent.isRetain(), 
 							   pubEvent.getPackgeID(),
 							   dup);
@@ -667,11 +669,11 @@ public class ProtocolProcess {
 		sendPublishMessage(pubEvent.getClientID(), 
 						   pubEvent.getTopic(), 
 						   pubEvent.getQos(), 
-						   pubEvent.getMessage(), 
+						   Unpooled.buffer().writeBytes(pubEvent.getMessage()),
 						   pubEvent.isRetain(), 
 						   pubEvent.getPackgeID(),
 						   dup);
-			messagesStore.removeQosPublishMessage(publishKey);
+		messagesStore.removeQosPublishMessage(publishKey);
 	}
 	
 	/**
@@ -706,7 +708,6 @@ public class ProtocolProcess {
 				qos = sub.getRequestedQos(); 
 			}
 			String clientID = sub.getClientID();
-			
 			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
 			
 			PublishMessage publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
@@ -715,10 +716,13 @@ public class ProtocolProcess {
 					message);
 			
 			if (!sub.isCleanSession()) {
-				 PublishEvent newPublishEvt = new PublishEvent(topic, qos, message, 
+				//将ByteBuf转变为byte[]
+				byte[] messageBytes = new byte[message.readableBytes()];
+				message.getBytes(message.readerIndex(), messageBytes);
+				PublishEvent newPublishEvt = new PublishEvent(topic, qos, messageBytes, 
 						 retain, sub.getClientID(), 
 						 packageID != null ? packageID : 0);
-                 messagesStore.storeMessageToSessionForPublish(newPublishEvt);
+                messagesStore.storeMessageToSessionForPublish(newPublishEvt);
 			}
 			
 			if (this.clients == null) {
@@ -956,7 +960,7 @@ public class ProtocolProcess {
 		 Collection<IMessagesStore.StoredMessage> messages = messagesStore.searchRetained(topic);
 		 for (IMessagesStore.StoredMessage storedMsg : messages) {
 	            Log.debug("send publish message for topic {" + topic + "}");
-	            sendPublishMessage(newSubscription.getClientID(), storedMsg.getTopic(), storedMsg.getQos(), storedMsg.getPayload(), true);
+	            sendPublishMessage(newSubscription.getClientID(), storedMsg.getTopic(), storedMsg.getQos(), Unpooled.buffer().writeBytes(storedMsg.getPayload()), true);
 	     }
 	}
 }

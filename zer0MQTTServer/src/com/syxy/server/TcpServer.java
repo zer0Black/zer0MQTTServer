@@ -1,5 +1,7 @@
 package com.syxy.server;
 
+import java.net.InetSocketAddress;
+
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
@@ -12,6 +14,9 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 
 import org.apache.log4j.Logger;
 
+import com.syxy.protocol.mqttImp.MQTTDecoder;
+import com.syxy.protocol.mqttImp.MQTTEncoder;
+import com.syxy.protocol.mqttImp.MQTTProcess;
 import com.syxy.util.MqttTool;
 
 /**
@@ -56,13 +61,15 @@ public class TcpServer {
 					protected void initChannel(SocketChannel ch)
 							throws Exception {
 						ChannelPipeline pipeline = ch.pipeline();
-						
+						pipeline.addLast("MQTTDecoder", new MQTTDecoder());
+						pipeline.addLast("MQTTEncoder", new MQTTEncoder());
+						pipeline.addLast("MQTTProcess", new MQTTProcess());
 					}
 				  })
 				  .option(ChannelOption.SO_BACKLOG, 1024)
 				  .childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {
-			ChannelFuture future = bootstrap.bind(port).sync();
+			ChannelFuture future = bootstrap.bind(new InetSocketAddress(port)).sync();
 			Log.info("服务器已启动，端口:" + port);
 		} catch (InterruptedException e) {
 			e.printStackTrace();

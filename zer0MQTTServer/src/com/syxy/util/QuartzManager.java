@@ -56,6 +56,7 @@ public class QuartzManager {
             JobDetail job = newJob(jobClass).withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类  
             if (jobParam != null && jobParam.size() > 0) {
 				//给job添加参数
+            	job.getJobDataMap().putAll(jobParam);
 			}
             // 触发器  
             SimpleTrigger trigger = (SimpleTrigger) newTrigger().withIdentity(triggerName, triggerGroupName)

@@ -22,10 +22,10 @@ public interface IMessagesStore {
 
 	public static class StoredMessage implements Serializable {
 		final QoS qos;
-        final ByteBuf payload;
+        final byte[] payload;
         final String topic;
 
-        public StoredMessage(ByteBuf message, QoS qos, String topic) {
+        public StoredMessage(byte[] message, QoS qos, String topic) {
             this.qos = qos;
             this.payload = message;
             this.topic = topic;
@@ -35,7 +35,7 @@ public interface IMessagesStore {
             return qos;
         }
 
-        public ByteBuf getPayload() {
+        public byte[] getPayload() {
 			return payload;
 		}
 

@@ -218,10 +218,13 @@ public class MapDBPersistentStore implements IMessagesStore, ISessionStore {
 
 	@Override
 	public void storeRetained(String topic, ByteBuf message, QoS qos) {
-		if (message.array().length <= 0) {
+		//将ByteBuf转变为byte[]
+		byte[] messageBytes = new byte[message.readableBytes()];
+		message.getBytes(message.readerIndex(), messageBytes);
+		if (messageBytes.length <= 0) {
 			retainedStore.remove(topic);
 		} else {
-			StoredMessage storedMessage = new StoredMessage(message, qos, topic);
+			StoredMessage storedMessage = new StoredMessage(messageBytes, qos, topic);
 			retainedStore.put(topic, storedMessage);
 		}
 		m_db.commit();
