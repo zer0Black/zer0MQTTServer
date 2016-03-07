@@ -2,6 +2,9 @@ package com.syxy.protocol.mqttImp;
 
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.timeout.IdleState;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 
 import com.syxy.protocol.mqttImp.message.ConnectMessage;
 import com.syxy.protocol.mqttImp.message.Message;
@@ -66,6 +69,27 @@ public class MQTTProcess extends ChannelHandlerAdapter {
 
 		default:
 			break;
+		}
+	}
+	
+	/**
+   	 * 事件追踪，处理超时事件，一旦检测到读超时，就断开链接
+   	 * @param ctx
+   	 * @param evt 
+   	 * @author zer0
+   	 * @version 1.0
+   	 * @date 2016-3-7
+   	 */
+	@Override
+	public void userEventTriggered(ChannelHandlerContext ctx, Object evt)
+			throws Exception {
+		if (evt instanceof IdleStateEvent) {
+			IdleStateEvent e = (IdleStateEvent)evt;
+			if (e.state() == IdleState.READER_IDLE) {
+				ctx.close();
+			}else {
+				//写超时不处理
+			}
 		}
 	}
 
