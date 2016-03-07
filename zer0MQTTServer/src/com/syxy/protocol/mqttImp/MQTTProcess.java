@@ -1,6 +1,5 @@
 package com.syxy.protocol.mqttImp;
 
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerAdapter;
 import io.netty.channel.ChannelHandlerContext;
 
@@ -11,11 +10,6 @@ import com.syxy.protocol.mqttImp.message.PublishMessage;
 import com.syxy.protocol.mqttImp.message.SubscribeMessage;
 import com.syxy.protocol.mqttImp.message.UnSubscribeMessage;
 import com.syxy.protocol.mqttImp.process.ProtocolProcess;
-import com.syxy.protocol.mqttImp.process.Impl.IdentityAuthenticator;
-import com.syxy.protocol.mqttImp.process.Impl.dataHandler.MapDBPersistentStore;
-import com.syxy.protocol.mqttImp.process.Interface.IAuthenticator;
-import com.syxy.protocol.mqttImp.process.Interface.IMessagesStore;
-import com.syxy.protocol.mqttImp.process.Interface.ISessionStore;
 
 /**
  *  MQTT协议业务处理
@@ -62,6 +56,9 @@ public class MQTTProcess extends ChannelHandlerAdapter {
 			process.processUnSubscribe(ctx.channel(), (UnSubscribeMessage)message);
 			break;
 		case UNSUBACK:
+			break;
+		case PINGREQ:
+			process.processPingReq(ctx.channel(), message);
 			break;
 		case DISCONNECT:
 			process.processDisconnet(ctx.channel(), message);

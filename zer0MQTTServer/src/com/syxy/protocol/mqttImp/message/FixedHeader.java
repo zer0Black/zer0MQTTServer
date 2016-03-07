@@ -135,6 +135,10 @@ public class FixedHeader {
 		return new FixedHeader(MessageType.UNSUBACK, false, QoS.AT_MOST_ONCE, false);
 	}
 	
+	public static FixedHeader getPingRespFixedHeader(){
+		return new FixedHeader(MessageType.PINGRESP, false, QoS.AT_MOST_ONCE, false);
+	}
+	
 	public static FixedHeader getDisconnectFixedHeader(){
 		return new FixedHeader(MessageType.DISCONNECT, false, QoS.AT_MOST_ONCE, false);
 	}

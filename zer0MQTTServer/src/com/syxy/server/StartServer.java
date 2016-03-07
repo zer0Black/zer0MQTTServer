@@ -12,12 +12,12 @@ public class StartServer {
 	public static void main(String[] args){
 		new TcpServer().startServer();
 		
-		while (true) {
-			try {
-				Thread.sleep(Integer.MAX_VALUE);
-			} catch (Exception e) {
-				// TODO: handle exception
-			}
-		}
+//		while (true) {
+//			try {
+//				Thread.sleep(Integer.MAX_VALUE);
+//			} catch (Exception e) {
+//				// TODO: handle exception
+//			}
+//		}
 	}
 }
