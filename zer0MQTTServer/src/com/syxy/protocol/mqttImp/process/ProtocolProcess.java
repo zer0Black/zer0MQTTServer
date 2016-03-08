@@ -342,7 +342,7 @@ public class ProtocolProcess {
 	private void processPublic(String clientID, String topic, QoS qos, boolean recRetain, ByteBuf message, Integer recPackgeID){
 		Log.info("接收public消息:{clientID="+clientID+",Qos="+qos+",topic="+topic+",packageID="+recPackgeID+"}");
 		String publishKey = null;
-		int sendPackageID = PackageIDManager.getNextMessageId();
+//		int sendPackageID = PackageIDManager.getNextMessageId();
 		
 		//根据协议P34，Qos=3的时候，就关闭连接
 		if (qos == QoS.RESERVE) {
@@ -353,7 +353,7 @@ public class ProtocolProcess {
 		if (qos == QoS.AT_MOST_ONCE) {
 			boolean dup = false;
 			boolean retain = false;
-			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
+			sendPublishMessage(topic, qos, message, retain, dup);
 		}
 		
 		//根据协议P53，publish的接受者需要发送该publish(Qos=1,Dup=0)消息给其他客户端，然后发送pubAck给该客户端。
@@ -361,25 +361,8 @@ public class ProtocolProcess {
 		if (qos == QoS.AT_LEAST_ONCE) {
 			boolean retain = false;
 			boolean dup = false;
-			
-			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
-			//将ByteBuf转变为byte[]
-			byte[] messageBytes = new byte[message.readableBytes()];
-			message.getBytes(message.readerIndex(), messageBytes);
-			PublishEvent storePubEvent = new PublishEvent(topic, qos, messageBytes, retain,
-                    clientID, sendPackageID);
 		
-			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
-			//存临时Publish消息，用于重发
-			messagesStore.storeQosPublishMessage(publishKey, storePubEvent);
-			//存离线消息
-			messagesStore.storeMessageToSessionForPublish(storePubEvent);
-			//开启Publish重传任务，在制定时间内未收到PubAck包则重传该条Publish信息
-			Map<String, Object> jobParam = new HashMap<String, Object>();
-			jobParam.put("ProtocolProcess", this);
-			jobParam.put("publishKey", publishKey);
-			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
-					
+			sendPublishMessage(topic, qos, message, retain, dup);
 			sendPubAck(clientID, recPackgeID);
 		}
 		
@@ -389,23 +372,8 @@ public class ProtocolProcess {
 		if (qos == QoS.EXACTLY_ONCE) {
 			boolean dup = false;
 			boolean retain = false;
-			publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
-			messagesStore.storePublicPackgeID(clientID, sendPackageID);
-			//将ByteBuf转变为byte[]
-			byte[] messageBytes = new byte[message.readableBytes()];
-			message.getBytes(message.readerIndex(), messageBytes);
-			PublishEvent pubEvent = new PublishEvent(topic, qos, messageBytes, retain, clientID, sendPackageID);
-			sendPublishMessage(topic, qos, message, retain, sendPackageID, dup);
-			
-			//存临时Publish消息，用于重发
-			messagesStore.storeQosPublishMessage(publishKey, pubEvent);
-			//存离线消息
-			messagesStore.storeMessageToSessionForPublish(pubEvent);
-			Map<String, Object> jobParam = new HashMap<String, Object>();
-			jobParam.put("ProtocolProcess", this);
-			jobParam.put("publishKey", publishKey);
-			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, jobParam);
-			
+			messagesStore.storePublicPackgeID(clientID, recPackgeID);
+			sendPublishMessage(topic, qos, message, retain, dup);
 			sendPubRec(clientID, recPackgeID);
 		}
 		
@@ -435,8 +403,6 @@ public class ProtocolProcess {
 		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 //删除临时存储用于重发的Publish消息
 		 messagesStore.removeQosPublishMessage(publishKey);
-		 //删除离线消息
-		 messagesStore.removeMessageInSessionForPublish(clientID, pacakgeID);
 		 //最后把使用完的包ID释放掉
 		 PackageIDManager.releaseMessageId(pacakgeID);
 	}
@@ -457,8 +423,6 @@ public class ProtocolProcess {
 		 //取消Publish重传任务,同时删除对应的值
 		 QuartzManager.removeJob(publishKey, "publish", publishKey, "publish");
 		 messagesStore.removeQosPublishMessage(publishKey);
-		 //删除离线消息
-		 messagesStore.removeMessageInSessionForPublish(clientID, packageID);
 		 //此处须额外处理，根据不同的事件，处理不同的包ID
 		 messagesStore.storePubRecPackgeID(clientID, packageID);
 		 //组装PubRel事件后，存储PubRel事件，并发回PubRel
@@ -471,7 +435,7 @@ public class ProtocolProcess {
 		 Map<String, Object> jobParam = new HashMap<String, Object>();
 		 jobParam.put("ProtocolProcess", this);
 		 jobParam.put("pubRelKey", publishKey);
-		 QuartzManager.addJob(publishKey, "pubRel", publishKey, "pubRel", RePubRelJob.class, 10, jobParam);
+		 QuartzManager.addJob(publishKey, "pubRel", publishKey, "pubRel", RePubRelJob.class, 10, 2, jobParam);
 	}
 	
 	/**
@@ -672,14 +636,12 @@ public class ProtocolProcess {
 		PublishEvent pubEvent = messagesStore.searchQosPublishMessage(publishKey);
 		Log.info("重发PublishKey为{"+ publishKey +"}的Publish离线消息");
 		boolean dup = true;
-		sendPublishMessage(pubEvent.getClientID(), 
-						   pubEvent.getTopic(), 
-						   pubEvent.getQos(), 
-						   Unpooled.buffer().writeBytes(pubEvent.getMessage()),
-						   pubEvent.isRetain(), 
-						   pubEvent.getPackgeID(),
-						   dup);
-		messagesStore.removeQosPublishMessage(publishKey);
+		PublishMessage publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+				FixedHeader.getPublishFixedHeader(dup, pubEvent.getQos(), pubEvent.isRetain()), 
+				new PublishVariableHeader(pubEvent.getTopic(), pubEvent.getPackgeID()), 
+				Unpooled.buffer().writeBytes(pubEvent.getMessage()));
+		//从会话列表中取出会话，然后通过此会话发送publish消息
+		this.clients.get(pubEvent.getClientID()).getClient().writeAndFlush(publishMessage);
 	}
 	
 	/**
@@ -693,7 +655,7 @@ public class ProtocolProcess {
 		PubRelEvent pubEvent = messagesStore.searchPubRelMessage(pubRelKey);
 		Log.info("重发PubRelKey为{"+ pubRelKey +"}的PubRel离线消息");
 		sendPubRel(pubEvent.getClientID(), pubEvent.getPackgeID());
-	    messagesStore.removeQosPublishMessage(pubRelKey);
+//	    messagesStore.removeQosPublishMessage(pubRelKey);
 	}
 	
 	/**
@@ -707,29 +669,23 @@ public class ProtocolProcess {
 	  * @version 1.0
       * @date 2015-05-19
 	  */
-	private void sendPublishMessage(String topic, QoS qos, ByteBuf message, boolean retain, Integer packageID, boolean dup){
+	private void sendPublishMessage(String topic, QoS originQos, ByteBuf message, boolean retain, boolean dup){
 		for (final Subscription sub : subscribeStore.getClientListFromTopic(topic)) {
+			
+			String clientID = sub.getClientID();
+			Integer sendPackageID = PackageIDManager.getNextMessageId();
+			String publishKey = String.format("%s%d", clientID, sendPackageID);
+			QoS qos = originQos;
+			
 			//协议P43提到， 假设请求的QoS级别被授权，客户端接收的PUBLISH消息的QoS级别小于或等于这个级别，PUBLISH 消息的级别取决于发布者的原始消息的QoS级别
-			if (qos.ordinal() > sub.getRequestedQos().ordinal()) {
+			if (originQos.ordinal() > sub.getRequestedQos().ordinal()) {
 				qos = sub.getRequestedQos(); 
 			}
-			String clientID = sub.getClientID();
-			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
 			
 			PublishMessage publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
 					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
-					new PublishVariableHeader(topic, packageID), 
+					new PublishVariableHeader(topic, sendPackageID), 
 					message);
-			
-			if (!sub.isCleanSession()) {
-				//将ByteBuf转变为byte[]
-				byte[] messageBytes = new byte[message.readableBytes()];
-				message.getBytes(message.readerIndex(), messageBytes);
-				PublishEvent newPublishEvt = new PublishEvent(topic, qos, messageBytes, 
-						 retain, sub.getClientID(), 
-						 packageID != null ? packageID : 0);
-                messagesStore.storeMessageToSessionForPublish(newPublishEvt);
-			}
 			
 			if (this.clients == null) {
 				throw new RuntimeException("内部错误，clients为null");
@@ -743,8 +699,44 @@ public class ProtocolProcess {
 				Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 			}
 			
-			//从会话列表中取出会话，然后通过此会话发送publish消息
-			this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+			if (originQos == QoS.AT_MOST_ONCE) {
+				publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+						FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+						new PublishVariableHeader(topic), 
+						message);
+				//从会话列表中取出会话，然后通过此会话发送publish消息
+				this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+			}else {
+				publishKey = String.format("%s%d", clientID, sendPackageID);//针对每个重生成key，保证消息ID不会重复
+				//将ByteBuf转变为byte[]
+				byte[] messageBytes = new byte[message.readableBytes()];
+				message.getBytes(message.readerIndex(), messageBytes);
+				PublishEvent storePublishEvent = new PublishEvent(topic, qos, messageBytes, retain, clientID, sendPackageID);
+				
+				//从会话列表中取出会话，然后通过此会话发送publish消息
+				this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+				//存临时Publish消息，用于重发
+				messagesStore.storeQosPublishMessage(publishKey, storePublishEvent);
+				//开启Publish重传任务，在制定时间内未收到PubAck包则重传该条Publish信息
+				Map<String, Object> jobParam = new HashMap<String, Object>();
+				jobParam.put("ProtocolProcess", this);
+				jobParam.put("publishKey", publishKey);
+				QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, 2, jobParam);
+			}
+			
+			Log.info("服务器发送消息给客户端{"+clientID+"},topic{"+topic+"},qos{"+qos+"}");
+			
+			if (!sub.isCleanSession()) {
+				//将ByteBuf转变为byte[]
+				byte[] messageBytes = new byte[message.readableBytes()];
+				message.getBytes(message.readerIndex(), messageBytes);
+				PublishEvent newPublishEvt = new PublishEvent(topic, qos, messageBytes, 
+						 retain, sub.getClientID(), 
+						 sendPackageID != null ? sendPackageID : 0);
+                messagesStore.storeMessageToSessionForPublish(newPublishEvt);
+			}
+			
+			
 		}
 	}
 	
@@ -763,19 +755,13 @@ public class ProtocolProcess {
 	  */
 	private void sendPublishMessage(String clientID, String topic, QoS qos, ByteBuf message, boolean retain, Integer packageID, boolean dup){
 		Log.info("发送pulicMessage给指定客户端");
-	
-		PublishMessage publishMessage = null;
-		if (qos != QoS.AT_MOST_ONCE) {
-			publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
-					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
-					new PublishVariableHeader(topic, packageID), 
-					message);
-		}else {
-			publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
-					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
-					new PublishVariableHeader(topic), 
-					message);
-		}
+		
+		String publishKey = String.format("%s%d", clientID, packageID);
+		
+		PublishMessage publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+				FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+				new PublishVariableHeader(topic, packageID), 
+				message);
 		
 		if (this.clients == null) {
 			throw new RuntimeException("内部错误，clients为null");
@@ -789,8 +775,30 @@ public class ProtocolProcess {
 			Log.debug("从会话列表{"+this.clients+"}查找到clientID:{"+clientID+"}");
 		}
 		
-		//从会话列表中取出会话，然后通过此会话发送publish消息
-		this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+		if (qos == QoS.AT_MOST_ONCE) {
+			publishMessage = (PublishMessage) MQTTMesageFactory.newMessage(
+					FixedHeader.getPublishFixedHeader(dup, qos, retain), 
+					new PublishVariableHeader(topic), 
+					message);
+			//从会话列表中取出会话，然后通过此会话发送publish消息
+			this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+		}else {
+			publishKey = String.format("%s%d", clientID, packageID);//针对每个重生成key，保证消息ID不会重复
+			//将ByteBuf转变为byte[]
+			byte[] messageBytes = new byte[message.readableBytes()];
+			message.getBytes(message.readerIndex(), messageBytes);
+			PublishEvent storePublishEvent = new PublishEvent(topic, qos, messageBytes, retain, clientID, packageID);
+			
+			//从会话列表中取出会话，然后通过此会话发送publish消息
+			this.clients.get(clientID).getClient().writeAndFlush(publishMessage);
+			//存临时Publish消息，用于重发
+			messagesStore.storeQosPublishMessage(publishKey, storePublishEvent);
+			//开启Publish重传任务，在制定时间内未收到PubAck包则重传该条Publish信息
+			Map<String, Object> jobParam = new HashMap<String, Object>();
+			jobParam.put("ProtocolProcess", this);
+			jobParam.put("publishKey", publishKey);
+			QuartzManager.addJob(publishKey, "publish", publishKey, "publish", RePublishJob.class, 10, 2, jobParam);
+		}
 	}
 	
 	 /**

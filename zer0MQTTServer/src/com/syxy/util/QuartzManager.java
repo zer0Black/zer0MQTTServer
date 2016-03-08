@@ -2,24 +2,23 @@ package com.syxy.util;
 
 import static org.quartz.DateBuilder.futureDate;
 import static org.quartz.JobBuilder.newJob;
-import static org.quartz.TriggerBuilder.newTrigger;
 
 import java.util.Date;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.quartz.CronTrigger;
+import org.quartz.CalendarIntervalScheduleBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
-import org.quartz.SimpleTrigger;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.quartz.DateBuilder.IntervalUnit;
 import org.quartz.TriggerKey;
 import org.quartz.impl.StdSchedulerFactory;
-
-import com.syxy.protocol.mqttImp.process.event.job.RePublishJob;
 
 /**
  * Quatrz调度框架的管理类，用于添加，删除，重置任务
@@ -43,6 +42,7 @@ public class QuartzManager {
 	 * @param jobClass
 	 * @param time
 	 * @param jobParam
+	 * @param count重复次数
 	 * @author zer0
 	 * @version 1.0
 	 * @date 2015-11-28
@@ -50,7 +50,7 @@ public class QuartzManager {
 	@SuppressWarnings("unchecked")
 	public static void addJob(String jobName, String jobGroupName,  
             String triggerName, String triggerGroupName, Class jobClass,  
-            int time, Map<String, Object> jobParam) {  
+            int time, int count, Map<String, Object> jobParam) {  
         try {  
             Scheduler sched = sf.getScheduler();  
             JobDetail job = newJob(jobClass).withIdentity(jobName, jobGroupName).build();// 任务名，任务组，任务执行类  
@@ -59,8 +59,13 @@ public class QuartzManager {
             	job.getJobDataMap().putAll(jobParam);
 			}
             // 触发器  
-            SimpleTrigger trigger = (SimpleTrigger) newTrigger().withIdentity(triggerName, triggerGroupName)
-    	            .startAt(futureDate(time, IntervalUnit.SECOND)).build();
+            Trigger trigger = TriggerBuilder.newTrigger().withIdentity(triggerName, triggerGroupName)
+    	            .startAt(futureDate(time, IntervalUnit.SECOND))
+    	            .withSchedule(SimpleScheduleBuilder
+    	            		.simpleSchedule()
+    	            		.withIntervalInSeconds(time)
+    	            		.withRepeatCount(count))
+    	            .build();
             Date ft = sched.scheduleJob(job, trigger);
             Log.info(jobName + "启动于" + ft);
             // 启动  
@@ -108,9 +113,9 @@ public class QuartzManager {
 	 */
 	public static void resetJob(String jobName,String jobGroupName,  
             String triggerName,String triggerGroupName, Class jobClass,  
-            int time, Map<String, Object> jobParam){
+            int time, int count, Map<String, Object> jobParam){
 		removeJob(jobName, jobGroupName, triggerName, triggerGroupName);
-		addJob(jobName, jobGroupName, triggerName, triggerGroupName, jobClass, time, jobParam);
+		addJob(jobName, jobGroupName, triggerName, triggerGroupName, jobClass, time, count, jobParam);
 	}
  
 	

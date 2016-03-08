@@ -3,6 +3,7 @@ package com.syxy.server;
 import java.net.InetSocketAddress;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -11,6 +12,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
 
@@ -34,6 +36,9 @@ public class TcpServer {
 	private static final String PORT = "port";//端口号
 	
 	private volatile Integer port;//服务器端口
+	private Channel channel;
+	private EventLoopGroup bossGroup;
+	private EventLoopGroup workerGroup;
 	
 	public TcpServer(){
 		this.port = MqttTool.getPropertyToInt(PORT);// 从配置中获取端口号
@@ -49,9 +54,9 @@ public class TcpServer {
 	 * @version 1.0
 	 * @date  2015-2-19
 	 */
-	public void startServer(){
-		EventLoopGroup bossGroup = new NioEventLoopGroup();
-		EventLoopGroup workerGroup = new NioEventLoopGroup();
+	public ChannelFuture startServer(){
+		bossGroup = new NioEventLoopGroup();
+		workerGroup = new NioEventLoopGroup();
 		ServerBootstrap bootstrap = new ServerBootstrap();
 		bootstrap.group(bossGroup, workerGroup)
 				 .channel(NioServerSocketChannel.class)
@@ -70,10 +75,21 @@ public class TcpServer {
 				  .childOption(ChannelOption.SO_KEEPALIVE, true);
 		try {
 			ChannelFuture future = bootstrap.bind(new InetSocketAddress(port)).sync();
+			channel = future.channel();
 			Log.info("服务器已启动，端口:" + port);
+			return future;
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		return null;
+	}
+	
+	public void destory(){
+		if (channel != null) {
+			channel.close();
+		}
+		bossGroup.shutdownGracefully();
+		workerGroup.shutdownGracefully();
 	}
 
 }

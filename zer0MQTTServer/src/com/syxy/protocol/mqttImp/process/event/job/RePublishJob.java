@@ -1,11 +1,13 @@
 package com.syxy.protocol.mqttImp.process.event.job;
 
+import org.apache.log4j.Logger;
 import org.quartz.Job;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 
 import com.syxy.protocol.mqttImp.process.ProtocolProcess;
+import com.syxy.util.QuartzManager;
 
 /**
  *  Publish消息重发事件需要做的工作，即重发消息到对应的clientID
@@ -15,6 +17,9 @@ import com.syxy.protocol.mqttImp.process.ProtocolProcess;
  * @date 2015-11-26
  */
 public class RePublishJob implements Job{
+	
+	private final static Logger Log = Logger.getLogger(RePublishJob.class);
+	int count = 0;
 	
 	@Override
 	public void execute(JobExecutionContext jobExecutionContext) throws JobExecutionException {
