@@ -24,7 +24,7 @@ public class MQTTClientTest extends JFrame {
     private JButton button;  
   
     private MqttClient client;  
-    private String host = "tcp://127.0.0.1:8088";  
+    private String host = "tcp://10.0.1.8:8088";  
 //  private String host = "tcp://iot.eclipse.org:1883";  
     private String userName = "test";  
     private String passWord = "test";  
@@ -44,23 +44,23 @@ public class MQTTClientTest extends JFrame {
             e.printStackTrace(); 
         }
   
-        Container container = this.getContentPane();  
-        panel = new JPanel();  
-        button = new JButton(clientMac);  
-        button.addActionListener(new ActionListener() {  
-
-            public void actionPerformed(ActionEvent ae) {  
-                try {
-                    MqttDeliveryToken token = topic.publish(message);  
-                    token.waitForCompletion();  
-                    System.out.println(token.isComplete()+"========");  
-                } catch (Exception e) {  
-                    e.printStackTrace();  
-                }  
-            } 
-        });  
-        panel.add(button);  
-        container.add(panel, "North");  
+//        Container container = this.getContentPane();  
+//        panel = new JPanel();  
+//        button = new JButton(clientMac);  
+//        button.addActionListener(new ActionListener() {  
+//
+//            public void actionPerformed(ActionEvent ae) {  
+//                try {
+//                    MqttDeliveryToken token = topic.publish(message);  
+//                    token.waitForCompletion();  
+//                    System.out.println(token.isComplete()+"========");  
+//                } catch (Exception e) {  
+//                    e.printStackTrace();  
+//                }  
+//            } 
+//        });  
+//        panel.add(button);  
+//        container.add(panel, "North");  
     }  
   
     private void connect() {  
@@ -107,14 +107,14 @@ public class MQTTClientTest extends JFrame {
     }  
   
     public static void main(String[] args) {
-//    	for (int i = 0; i < 1000; i++) {
+    	for (int i = 0; i < 1000; i++) {
     		MQTTClientTest s = new MQTTClientTest();
-//    		System.out.println(i);
-//		}
+    		System.out.println(i);
+		}
     		
-        s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
-        s.setSize(600, 370);  
-        s.setLocationRelativeTo(null);  
-        s.setVisible(true);  
+//        s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
+//        s.setSize(600, 370);  
+//        s.setLocationRelativeTo(null);  
+//        s.setVisible(true);  
     } 
 }  
