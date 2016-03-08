@@ -548,5 +548,5 @@ public class MQTTDecoder extends ReplayingDecoder<DecoderState> {
 		}
 		
 	}
-
+	
 }

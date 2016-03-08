@@ -3,6 +3,7 @@ package com.syxy.protocol.mqttImp.process.subscribe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Queue;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingDeque;
 
 /**
@@ -16,7 +17,7 @@ public class TreeNode {
 	
     TreeNode parent;
     Token token;
-    List<TreeNode> children = new ArrayList<TreeNode>();//子节点列表
+    List<TreeNode> children = new CopyOnWriteArrayList<TreeNode>();//子节点列表
     List<Subscription> subscriptions = new ArrayList<Subscription>();//客户ID列表，每个subscription代表一个clientID
     
     public TreeNode(TreeNode parent) {

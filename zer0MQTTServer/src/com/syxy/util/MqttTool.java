@@ -19,7 +19,7 @@ public class MqttTool {
 	
 	private static Properties props = new Properties();
 	//配置文件路径
-	private static final String CONFIG_FILE = System.getProperty("user.dir") + "/resource/mqtt.properties";
+	private static final String CONFIG_FILE = System.getProperty("user.dir") + "/zer0MQTTServer/resource/mqtt.properties";
 	
 	static{
 		loadProperties(CONFIG_FILE);
