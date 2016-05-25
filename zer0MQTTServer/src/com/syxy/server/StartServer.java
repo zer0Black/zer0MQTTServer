@@ -3,7 +3,7 @@ package com.syxy.server;
 import io.netty.channel.ChannelFuture;
 
 /**
- *  启动服务器，主线程所在
+ * 启动服务器，主线程所在
  * 
  * @author zer0
  * @version 1.0

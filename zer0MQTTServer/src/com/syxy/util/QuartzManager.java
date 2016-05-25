@@ -7,7 +7,6 @@ import java.util.Date;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.quartz.CalendarIntervalScheduleBuilder;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;

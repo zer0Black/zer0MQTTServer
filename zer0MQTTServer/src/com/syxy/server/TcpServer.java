@@ -69,6 +69,7 @@ public class TcpServer {
 						pipeline.addLast("MQTTDecoder", new MQTTDecoder());
 						pipeline.addLast("MQTTEncoder", new MQTTEncoder());
 						pipeline.addLast("MQTTProcess", new MQTTProcess());
+						//心跳处理在收到CONNECT消息协议的时候，根据协议内容动态添加
 					}
 				  })
 				  .option(ChannelOption.SO_BACKLOG, 1024)
