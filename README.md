@@ -6,6 +6,7 @@
 
 ## 更新日志
 2015年12月8日 zer0MQTTServer第一版，实现了MQTT协议
+
 2016年05月25日 zer0MQTTServer第二版，协议通信底层由 Java AIO 切换到 Netty5.0，使用netty的编码解码模块功能重写了全部的协议编码解码
 
 ## <a name="1">说明</a>
