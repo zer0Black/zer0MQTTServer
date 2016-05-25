@@ -7,8 +7,9 @@
 ## 更新日志
 2015年12月8日 zer0MQTTServer第一版，实现了MQTT协议
 
+2016年05月25日 zer0MQTTServer第二版，协议通信底层由 Java AIO 切换到 Netty5.0，使用netty的编码解码模块功能重写了全部的协议编码解码
+
 ## <a name="1">说明</a>
-**重要的放前面：V1.0版本是一个非常基础的版本，除了完整的MQTT协议实现外，其他功能什么都没做。**
 
 MQTT 协议是 IBM 开发的即时通讯协议，相对于 IM 的实际上的准标准协议 XMPP 来说，MQTT 更小，更快，更轻量。MQTT 适合于任何计算能力有限，工作在低带宽、不可靠的网络中的设备，包括手机，传感器等等。
 
@@ -18,10 +19,9 @@ MQTT 协议是 IBM 开发的即时通讯协议，相对于 IM 的实际上的准
 
 ## <a name="2">功能</a>
 已实现：
-* 网络传输功能（使用 Java7 才开始支持的 AIO 实现）~~
+* 网络传输功能（使用 Netty5.0 实现）~~
 * 会话管理功能
 * 任务调度框架（使用Quartz框架为基础封装）
-* 协议层与网络层的分离（即换套协议，网络层一点不用改，也能用）
 * MQTT完整实现（推送，单聊，群聊）
 
 
@@ -51,13 +51,13 @@ MQTT 协议是 IBM 开发的即时通讯协议，相对于 IM 的实际上的准
 
 com.syxy.util 包中是一些公共类，包括缓冲池BufferPool、任务调度框架QuartzManager、字符串处理类StringTool、日期时间类TimeUtils等等
 
-com.syxy.Aiohandler 是 AIO 的具体实现，包含了 IO 建立、数据接收、数据回写3个类。
+com.syxy.server 是网络应用层，StartServer 用于启动服务器，并初始化协议相关的类。TcpServer用于处理配置文件中的系统常量，并启动服务器。
 
-com.syxy.server 是网络应用层，StartServer 用于启动服务器，并初始化协议相关的类。TcpServer 初始化了服务器的初始资源，包括缓冲区大小，协议处理器，端口配置，AIO 等等。ClientSession 是会话管理类，每个客户端的连接对应一个此类对象，包含心跳处理，会话断开，数据接收，处理，回写等等内容。
+com.syxy.protocol.mqttImp 定义了协议编码、解码、业务逻辑接口。并实现了具体的协议编码，解码，业务处理
 
-com.syxy.protocol 定义了协议处理接口
+com.syxy.protocol.mqttImp.message 中包含了14种消息类型的实体类，并将每个消息类型划分成固定头部、可变头部、荷载三部分。
 
-com.syxy.protocol.mqttImp 则是具体的 MQTT 协议的处理。包括协议的编码，解码，业务处理等等。其中的 message 包中处理了14种 MQTT 对应的消息类型（编码、解码）。process 包中进行了协议的具体处理。最重要的是```ProtocolProcess.java```文件，其中完整实现了MQTT协议文件中的具体流程。
+com.syxy.protocol.mqttImp.process 中进行了协议的具体处理。最重要的是```ProtocolProcess.java```文件，其中完整实现了MQTT协议文件中的具体流程。
 
 resource 文件中包含了一些配置文件，其中 mqtt.properties 文件可以针对缓冲区大小、临时存储文件名、服务器端口等信息
 
