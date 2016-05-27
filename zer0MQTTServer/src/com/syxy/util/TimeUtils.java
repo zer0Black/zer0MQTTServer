@@ -43,6 +43,9 @@ public class TimeUtils {
 			}
 			if (raw != null)
 				raw.close();
+			if (secondsSince1900 <= 0){
+                return currentSystemTime();
+			}
 			long secondsSince1970 = secondsSince1900 - differenceBetweenEpochs;
 			long msSince1970 = secondsSince1970 * 1000;
 			// 把时间戳转为当前时间
