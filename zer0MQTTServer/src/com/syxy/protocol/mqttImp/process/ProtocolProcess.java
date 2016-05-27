@@ -213,7 +213,7 @@ public class ProtocolProcess {
 		//协议P29规定，在超过1.5个keepAlive的时间以上没收到心跳包PingReq，就断开连接(但这里要注意把单位是s转为ms)
 		NettyAttrManager.setAttrKeepAlive(client, keepAlive);
 		//添加心跳机制处理的Handler
-		client.pipeline().addFirst("idleStateHandler", new IdleStateHandler(keepAlive, Integer.MAX_VALUE, Integer.MAX_VALUE, TimeUnit.SECONDS));
+		client.pipeline().addFirst("idleStateHandler", new IdleStateHandler(Math.round(keepAlive * 1.5f), Integer.MAX_VALUE, Integer.MAX_VALUE, TimeUnit.SECONDS));
 		
 		//处理Will flag（遗嘱信息）,协议P26
 		if (connectMessage.getVariableHeader().isHasWill()) {

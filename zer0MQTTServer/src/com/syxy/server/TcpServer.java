@@ -12,6 +12,8 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.compression.ZlibCodecFactory;
+import io.netty.handler.codec.compression.ZlibWrapper;
 import io.netty.util.concurrent.Future;
 
 import org.apache.log4j.Logger;
@@ -66,6 +68,10 @@ public class TcpServer {
 					protected void initChannel(SocketChannel ch)
 							throws Exception {
 						ChannelPipeline pipeline = ch.pipeline();
+						//数据压缩解压缩
+						pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.ZLIB));
+						pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.ZLIB));
+						//MQTT协议编码解码
 						pipeline.addLast("MQTTDecoder", new MQTTDecoder());
 						pipeline.addLast("MQTTEncoder", new MQTTEncoder());
 						pipeline.addLast("MQTTProcess", new MQTTProcess());
