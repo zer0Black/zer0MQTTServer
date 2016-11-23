@@ -69,8 +69,8 @@ public class TcpServer {
 							throws Exception {
 						ChannelPipeline pipeline = ch.pipeline();
 						//数据压缩解压缩
-						pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.ZLIB));
-						pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.ZLIB));
+//						pipeline.addLast(ZlibCodecFactory.newZlibDecoder(ZlibWrapper.ZLIB));
+//						pipeline.addLast(ZlibCodecFactory.newZlibEncoder(ZlibWrapper.ZLIB));
 						//MQTT协议编码解码
 						pipeline.addLast("MQTTDecoder", new MQTTDecoder());
 						pipeline.addLast("MQTTEncoder", new MQTTEncoder());

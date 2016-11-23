@@ -24,7 +24,7 @@ public class MQTTClientTest extends JFrame {
     private JButton button;  
   
     private MqttClient client;  
-    private String host = "tcp://10.0.1.8:8088";  
+    private String host = "tcp://localhost:8088";  
 //  private String host = "tcp://iot.eclipse.org:1883";  
     private String userName = "test";  
     private String passWord = "test";  
@@ -32,7 +32,8 @@ public class MQTTClientTest extends JFrame {
     private MqttMessage message;  
   
     private String myTopic = "test/topic";  
-    String clientMac = StringTool.generalMacString();
+//    String clientMac = StringTool.generalMacString();
+    String clientMac = "44-45-53-54-00-00";
   
     public MQTTClientTest() {  
   
@@ -107,10 +108,10 @@ public class MQTTClientTest extends JFrame {
     }  
   
     public static void main(String[] args) {
-    	for (int i = 0; i < 1000; i++) {
+//    	for (int i = 0; i < 1000; i++) {
     		MQTTClientTest s = new MQTTClientTest();
-    		System.out.println(i);
-		}
+//    		System.out.println(i);
+//		}
     		
 //        s.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);  
 //        s.setSize(600, 370);  
