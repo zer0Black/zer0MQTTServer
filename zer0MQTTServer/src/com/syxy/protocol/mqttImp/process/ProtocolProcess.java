@@ -864,7 +864,7 @@ public class ProtocolProcess {
 	        Log.trace("发送PubRec消息给客户端");
 
 	        Message pubRecMessage = MQTTMesageFactory.newMessage(
-	        		FixedHeader.getPubAckFixedHeader(), 
+	        		FixedHeader.getPubRecFixedHeader(), 
 	        		new PackageIdVariableHeader(packageID), 
 	        		null);
 	        
@@ -899,7 +899,7 @@ public class ProtocolProcess {
 	        Log.trace("发送PubRel消息给客户端");
 
 	        Message pubRelMessage = MQTTMesageFactory.newMessage(
-	        		FixedHeader.getPubAckFixedHeader(), 
+	        		FixedHeader.getPubRelFixedHeader(), 
 	        		new PackageIdVariableHeader(packageID), 
 	        		null);
 	        
@@ -934,7 +934,7 @@ public class ProtocolProcess {
 	        Log.trace("发送PubComp消息给客户端");
 
 	        Message pubcompMessage = MQTTMesageFactory.newMessage(
-	        		FixedHeader.getPubAckFixedHeader(), 
+	        		FixedHeader.getPubCompFixedHeader(), 
 	        		new PackageIdVariableHeader(packageID), 
 	        		null);
 	        
