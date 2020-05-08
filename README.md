@@ -34,20 +34,20 @@ MQTT 协议是 IBM 开发的即时通讯协议，相对于 IM 的实际上的准
 * ~~总之就是可以拓展的应用层都没做~~
 
 ## <a name="3">如何使用</a>
-####zer0MqttServer 的使用很简单：
+#### zer0MqttServer 的使用很简单：
 * 下载源码（源码中包括所有依赖包）
 * 检查 Java 版本是否为1.7或以上，不是则按照 Java 1.7及以上
 * 导入IDE
 * 引用依赖包
 * 运行包 com.syxy.server 下的 StartServer 文件，即可启动服务器。
 
-####测试方法也同样简单：
+#### 测试方法也同样简单：
 
 运行包 test 下的 MQTTClientTest 文件，即可开启测试客户端。
 
 测试客户端包括的功能有：连接服务器、订阅主题、发送固定信息，客户端通过 pahoMqtt 第三方jar包编写，你可以自行修改代码进行更详细的测试
 
-####下面简述一下项目的目录结构：
+#### 下面简述一下项目的目录结构：
 
 com.syxy.util 包中是一些公共类，包括缓冲池BufferPool、任务调度框架QuartzManager、字符串处理类StringTool、日期时间类TimeUtils等等
 
